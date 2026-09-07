@@ -1,0 +1,15 @@
+# Dependencies (only needed for the optional jsdom smoke test)
+node_modules/
+package-lock.json
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+
+# Build and coverage artefacts
+coverage/
+*.log
