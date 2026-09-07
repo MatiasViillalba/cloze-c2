@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Design tokens — "Ember" dark theme
+   Deep black canvas + high-energy orange. Everything else derives from here.
+   ========================================================================== */
+
+:root {
+  /* --- Surfaces --------------------------------------------------------- */
+  --ink-1000: #050507;
+  --ink-900:  #08080B;
+  --ink-800:  #0E0E13;
+  --ink-700:  #14141B;
+  --ink-600:  #1B1B24;
+  --ink-500:  #24242F;
+
+  --surface:        rgba(255, 255, 255, 0.045);
+  --surface-strong: rgba(255, 255, 255, 0.075);
+  --surface-sunken: rgba(0, 0, 0, 0.35);
+  --line:           rgba(255, 255, 255, 0.09);
+  --line-strong:    rgba(255, 255, 255, 0.16);
+
+  /* --- Ink -------------------------------------------------------------- */
+  --fg:      #F6F6F8;
+  --fg-soft: #C9C9D2;
+  --fg-dim:  #8B8B98;
+  --fg-mute: #61616E;
+
+  /* --- Brand ------------------------------------------------------------ */
+  --ember-100: #FFE2C7;
+  --ember-200: #FFC79A;
+  --ember-300: #FFB367;
+  --ember-400: #FF9A3D;
+  --ember-500: #FF6A00;
+  --ember-600: #F04E00;
+  --ember-700: #C63C00;
+
+  --ember-grad:      linear-gradient(135deg, #FF9A3D 0%, #FF6A00 45%, #EE4A00 100%);
+  --ember-grad-soft: linear-gradient(135deg, rgba(255,154,61,.22), rgba(238,74,0,.10));
+  --ember-ring:      rgba(255, 106, 0, 0.35);
+
+  /* --- Semantic --------------------------------------------------------- */
+  --good:      #35D07F;
+  --good-soft: rgba(53, 208, 127, .14);
+  --bad:       #FF4D5E;
+  --bad-soft:  rgba(255, 77, 94, .14);
+  --warn:      #FFC531;
+
+  /* --- Radii ------------------------------------------------------------ */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* --- Elevation -------------------------------------------------------- */
+  --sh-soft:  0 2px 10px rgba(0,0,0,.45);
+  --sh-card:  0 18px 40px -22px rgba(0,0,0,.9);
+  --sh-glow:  0 14px 44px -14px rgba(255,106,0,.55);
+  --sh-glow-sm: 0 8px 22px -10px rgba(255,106,0,.6);
+
+  /* --- Motion ----------------------------------------------------------- */
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --t-fast: 140ms;
+  --t-med:  260ms;
+  --t-slow: 460ms;
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+             "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-read: "New York", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* --- Layout ----------------------------------------------------------- */
+  --pad: 20px;
+  --maxw: 720px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --topbar-h: 54px;
+  --tabbar-h: 62px;
+}
+
+/* Text-size preference set from Ajustes. */
+:root[data-textsize="s"]  { --read-size: 17px; --read-lh: 1.72; }
+:root                     { --read-size: 18.5px; --read-lh: 1.82; }
+:root[data-textsize="l"]  { --read-size: 21px; --read-lh: 1.9; }
+
+/* Reduced-motion users get a calm, static canvas. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; --t-med: 0ms; --t-slow: 0ms; }
+}
