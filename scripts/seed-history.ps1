@@ -350,7 +350,8 @@ foreach ($step in $steps) {
 }
 
 # Anything not claimed by a step above still belongs in the release.
-Invoke-Git add -A | Out-Null
+# Passed as an array: a bare -A would bind to this function's own -Arguments.
+Invoke-Git @('add', '--all') | Out-Null
 & git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
     Invoke-Git commit -m 'chore: add remaining project files' -m 'Sweeps up anything not claimed by an earlier step so the working tree is clean.' | Out-Null
