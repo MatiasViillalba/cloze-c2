@@ -8,7 +8,7 @@
  * app is on the home screen.
  */
 
-const BUILD = '2026.09.07';
+const BUILD = '2026.09.07.2';
 const CACHE = 'cloze-c2-' + BUILD;
 
 const ASSETS = [
@@ -50,6 +50,7 @@ const ASSETS = [
   './assets/js/ui/drill.js',
   './assets/js/ui/result.js',
   './assets/js/ui/mistakes.js',
+  './assets/js/ui/weak.js',
   './assets/js/ui/library.js',
   './assets/js/ui/stats.js',
   './assets/js/ui/settings.js',

@@ -77,6 +77,17 @@
     });
   }
 
+  /** Practice built from skill keys: the Puntos débiles screen feeds this. */
+  function startWeakPractice(keys, perKey) {
+    const list = keys && keys.length ? keys : CPE.srs.troubleKeys(CPE.content.allKeys());
+    if (!list.length) { CPE.toast('No hay puntos débiles pendientes. ¡Bien ahí!', 'good'); return; }
+    startDrill({
+      keyPractice: list,
+      perKey: perKey || 3,
+      n: Math.min(30, Math.max(6, list.length * (perKey || 3)))
+    });
+  }
+
   /**
    * The smart session: mistakes first (that is where the marks are), then any
    * overdue pattern, and only then a fresh exam text.
@@ -155,7 +166,7 @@
   function boot() {
     CPE.store.load();
     injectDefs();
-    document.documentElement.setAttribute('data-textsize', CPE.store.get('settings').textSize || 'm');
+    CPE.applyTextScale(CPE.store.get('settings').textScale);
     wireChrome();
     refreshStreakPill();
     go('home');
@@ -163,7 +174,10 @@
     registerServiceWorker();
   }
 
-  CPE.app = { go, back, startCloze, startDrill, startSmart, startPractice, showResult, boot, refreshStreakPill };
+  CPE.app = {
+    go, back, startCloze, startDrill, startSmart, startPractice, startWeakPractice,
+    showResult, boot, refreshStreakPill
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

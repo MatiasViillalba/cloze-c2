@@ -169,7 +169,51 @@ if (JSDOM) {
   test('settings persist and are applied to the document', () => {
     CPE.app.go('settings');
     const rows = window.document.querySelectorAll('#screen-settings .seg button');
-    rows[rows.length - 1].click();                       /* largest text size */
-    assert.equal(window.document.documentElement.getAttribute('data-textsize'), 'l');
+    rows[rows.length - 1].click();                       /* highest daily goal */
+    assert.equal(CPE.store.get('settings').dailyGoal, 40);
+  });
+
+  test('each tap on the A buttons nudges the text scale one step', () => {
+    CPE.app.go('settings');
+    const root = window.document.documentElement;
+    const bigger = window.document.querySelector('#screen-settings .type-size__btn--lg');
+    const smaller = window.document.querySelector('#screen-settings .type-size__btn--sm');
+    const read = () => Number(root.style.getPropertyValue('--read-scale'));
+
+    const base = read();
+    bigger.click();
+    const up = read();
+    assert.ok(up > base, 'la A grande agranda');
+    bigger.click();
+    assert.ok(read() > up, 'y sigue agrandando a cada toque');
+
+    smaller.click();
+    smaller.click();
+    assert.ok(Math.abs(read() - base) < 0.001, 'la A chica vuelve sobre sus pasos');
+    assert.equal(CPE.store.get('settings').textScale, read(), 'la escala queda guardada');
+  });
+
+  test('the weak-spot screen lists trouble and its verdict buttons colour up', () => {
+    /* Estado propio: los tests anteriores reinician el progreso. */
+    CPE.store.reset();
+    CPE.content.allKeys().slice(0, 4).forEach((k) => CPE.srs.grade(k, false));
+
+    CPE.app.go('weak');
+    const host = $('#screen-weak');
+    assert.ok(host.classList.contains('is-active'));
+
+    const trouble = CPE.srs.troubleKeys(CPE.content.allKeys());
+    assert.equal(trouble.length, 4, 'cada fallo es un punto débil');
+
+    const yes = host.querySelector('.verdict__btn--yes');
+    yes.click();
+    assert.ok(
+      $('#screen-weak').querySelector('.verdict__btn--yes.is-on'),
+      'el boton elegido queda pintado tras el re-render'
+    );
+    assert.ok(
+      CPE.srs.troubleKeys(CPE.content.allKeys()).length < trouble.length,
+      'lo marcado como aprendido sale de los puntos debiles'
+    );
   });
 }

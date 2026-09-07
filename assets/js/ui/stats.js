@@ -59,6 +59,32 @@
     return wrap;
   }
 
+  /**
+   * The button the whole Progreso table is really for: take every pattern
+   * sitting at 0% or carrying a mistake and drill them, in random order, in
+   * whatever contexts the bank can supply.
+   */
+  function randomTroubleButton() {
+    const trouble = CPE.srs.troubleKeys(CPE.content.allKeys());
+    if (!trouble.length) return null;
+    const shuffled = CPE.util.shuffle(trouble);
+    return el('div.card', { style: 'margin-top:12px' },
+      el('div.h3', { text: 'Ejercicios random con lo que fallás' }),
+      el('div.muted', {
+        style: 'margin:6px 0 12px',
+        text: trouble.length + ' patrones al 0% o con errores. Se mezclan al azar y salen en contextos distintos cada vez.'
+      }),
+      el('button.btn.btn--primary.btn--block', {
+        type: 'button',
+        onclick: () => CPE.app.startWeakPractice(shuffled)
+      }, 'Generar ejercicios random'),
+      el('button.btn.btn--ghost.btn--block', {
+        type: 'button', style: 'margin-top:8px',
+        onclick: () => CPE.app.go('weak')
+      }, 'Ver todos mis puntos débiles')
+    );
+  }
+
   function skillTable() {
     const skills = CPE.store.get('skills');
     const rows = Object.keys(skills)
@@ -138,7 +164,12 @@
       el('div.tiny', { style: 'margin-top:10px', text: 'Acertar sube un patrón de caja; fallar lo baja dos. Cuanto más alta la caja, más tarda en volver a aparecer.' })
     ));
 
-    frag.appendChild(el('div.eyebrow', { style: '--i:6', text: 'Patrones, del peor al mejor' }));
+    frag.appendChild(el('div.row.row--between.eyebrow', { style: '--i:6' },
+      el('span', { text: 'Patrones, del peor al mejor' }),
+      el('button.chip.chip--ember', { type: 'button', onclick: () => CPE.app.go('weak') }, 'Puntos débiles')
+    ));
+    const randomBtn = randomTroubleButton();
+    if (randomBtn) frag.appendChild(randomBtn);
     frag.appendChild(skillTable());
 
     host.appendChild(frag);

@@ -82,10 +82,16 @@
   --tabbar-h: 62px;
 }
 
-/* Text-size preference set from Ajustes. */
-:root[data-textsize="s"]  { --read-size: 17px; --read-lh: 1.72; }
-:root                     { --read-size: 18.5px; --read-lh: 1.82; }
-:root[data-textsize="l"]  { --read-size: 21px; --read-lh: 1.9; }
+/* Text size from Ajustes: a continuous scale, nudged a step at a time by the
+   two A buttons. `--read-scale` is written straight onto <html> by settings.js
+   and everything readable derives from it. */
+:root {
+  --read-scale: 1;
+  --read-size: calc(18.5px * var(--read-scale));
+  --read-lh: calc(1.62 + .2 / var(--read-scale));
+  --drill-size: calc(19.5px * var(--read-scale));
+  --explain-size: calc(13.5px * var(--read-scale));
+}
 
 /* Reduced-motion users get a calm, static canvas. */
 @media (prefers-reduced-motion: reduce) {

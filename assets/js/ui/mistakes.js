@@ -25,7 +25,8 @@
     const acc = CPE.words.accuracy(rec);
     const tier = acc >= 80 ? 'hi' : acc >= 50 ? 'mid' : 'lo';
 
-    const row = el('div.mistake');
+    const mark = CPE.words.markOf(rec.w);
+    const row = el('div.mistake' + (mark ? '.is-' + mark : ''));
     row.appendChild(el('div.mistake__head', null,
       el('button.mistake__word', {
         type: 'button',
@@ -41,25 +42,22 @@
       )
     ));
 
+    /* Los dos botones están siempre, y el elegido queda pintado: verde
+       "Aprendido", rojo "Aún no", hasta que el alumno cambie de opinión. */
     const actions = el('div.verdict.verdict--tight');
-    if (rec.learned) {
-      actions.appendChild(el('button.verdict__btn', {
-        type: 'button',
-        onclick: () => { CPE.words.setLearned(rec.w, false); CPE.toast('Vuelve a la práctica de errores'); onChange(); }
-      }, 'Volver a practicar'));
-    } else {
-      if (CPE.words.looksLearned(rec.w)) {
-        actions.appendChild(el('span.verdict__q', { text: rec.streak + ' aciertos seguidos' }));
-      }
-      actions.appendChild(el('button.verdict__btn.verdict__btn--yes', {
-        type: 'button',
-        onclick: () => { CPE.words.setLearned(rec.w, true); CPE.toast('«' + rec.w + '» aprendida', 'good'); onChange(); }
-      }, 'Aprendido'));
-      actions.appendChild(el('button.verdict__btn', {
-        type: 'button',
-        onclick: () => { CPE.words.setLearned(rec.w, false); CPE.toast('Sigue en práctica'); onChange(); }
-      }, 'Aún no'));
+    if (CPE.words.looksLearned(rec.w)) {
+      actions.appendChild(el('span.verdict__q', { text: rec.streak + ' aciertos seguidos' }));
     }
+    actions.appendChild(el('button.verdict__btn.verdict__btn--yes' + (mark === 'yes' ? '.is-on' : ''), {
+      type: 'button',
+      'aria-pressed': mark === 'yes' ? 'true' : 'false',
+      onclick: () => { CPE.words.setLearned(rec.w, true); CPE.toast('«' + rec.w + '» aprendida', 'good'); onChange(); }
+    }, 'Aprendido'));
+    actions.appendChild(el('button.verdict__btn.verdict__btn--no' + (mark === 'no' ? '.is-on' : ''), {
+      type: 'button',
+      'aria-pressed': mark === 'no' ? 'true' : 'false',
+      onclick: () => { CPE.words.setLearned(rec.w, false); CPE.toast('Sigue en práctica'); onChange(); }
+    }, 'Aún no'));
     row.appendChild(actions);
     return row;
   }

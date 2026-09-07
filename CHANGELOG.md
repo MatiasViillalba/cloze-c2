@@ -4,6 +4,27 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-09-07
+
+### Added
+
+- **Pantalla Puntos débiles.** Todo lo que la app detecta como flojo — palabras,
+  chunks, colocaciones, modismos, phrasal verbs y estructuras — agrupado por
+  tipo, del peor al mejor, con su porcentaje y sus contextos disponibles.
+  Incluye "Practicar todos estos puntos débiles" y práctica por grupo.
+- **Ejercicios random desde Progreso.** Un botón que toma todos los patrones al
+  0% o con errores, los mezcla al azar y los saca en contextos distintos.
+- **Práctica por patrón, no solo por palabra.** Se puede retirar `TAKE` en "take
+  for granted" sin retirar `TAKE` en todos lados.
+
+### Changed
+
+- **Los botones se quedan pintados.** "Aprendido" queda en verde y "Aún no" en
+  rojo hasta que el alumno cambie de opinión, en la práctica y en las dos listas.
+- **Tamaño del texto continuo.** Las dos A de Ajustes ahora suben o bajan un
+  paso por toque (78%–150%) en vez de tres tallas fijas, con muestra en vivo, y
+  la escala afecta a textos de examen, ejercicios y explicaciones.
+
 ## [1.1.0] — 2026-09-07
 
 ### Added

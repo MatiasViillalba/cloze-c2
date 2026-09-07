@@ -118,12 +118,61 @@
   transition: transform var(--t-fast) var(--ease-out), opacity var(--t-fast) linear;
 }
 .verdict__btn:active { transform: scale(.94); }
-.verdict__btn--yes {
-  border-color: rgba(53,208,127,.4);
+/* Unpressed the pair is neutral; the learner's choice is what carries colour,
+   and it stays until they choose the other one. */
+.verdict__btn--yes.is-on {
+  border-color: rgba(53,208,127,.65);
   background: var(--good-soft);
   color: var(--good);
+  box-shadow: 0 0 0 1px rgba(53,208,127,.25) inset;
+}
+.verdict__btn--no.is-on {
+  border-color: rgba(255,77,94,.65);
+  background: var(--bad-soft);
+  color: #FF8792;
+  box-shadow: 0 0 0 1px rgba(255,77,94,.25) inset;
 }
 .verdict__done { font-size: 12px; font-weight: 700; color: var(--good); }
+
+/* The row itself picks up a hairline of the same colour. */
+.mistake.is-yes { border-color: rgba(53,208,127,.32); }
+.mistake.is-no  { border-color: rgba(255,77,94,.32); }
+.mistake__pat { margin-top: 4px; font-size: 12px; color: var(--fg-dim); }
+
+/* --- Text size control ----------------------------------------------------- */
+.set-row--stack { display: block; }
+.type-size { display: flex; align-items: center; gap: 8px; flex: none; }
+.type-size__n {
+  min-width: 44px; text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+.type-size__btn {
+  width: 42px; height: 42px;
+  display: grid; place-content: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-strong);
+  color: var(--fg);
+  font-family: inherit; font-weight: 800;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast) var(--ease-out), opacity var(--t-fast) linear;
+}
+.type-size__btn--sm { font-size: 13px; }
+.type-size__btn--lg { font-size: 22px; }
+.type-size__btn:active { transform: scale(.9); }
+.type-size__btn:disabled { opacity: .3; cursor: default; }
+.type-sample {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  font-family: var(--font-read);
+  font-size: var(--read-size);
+  line-height: var(--read-lh);
+  color: var(--fg-soft);
+}
 
 /* --- Readiness breakdown --------------------------------------------------- */
 .mix { display: grid; gap: 9px; margin-top: 16px; }
@@ -208,7 +257,7 @@
 }
 .drill-card__s {
   font-family: var(--font-read);
-  font-size: 19.5px;
+  font-size: var(--drill-size);
   line-height: 1.78;
   color: var(--fg);
 }

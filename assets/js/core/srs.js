@@ -77,6 +77,29 @@
     return limit ? scored.slice(0, limit) : scored;
   }
 
+  /**
+   * Every trouble spot, worst first: any skill actually attempted that has been
+   * missed at least once or is still sitting at 0% accuracy. Skills the learner
+   * has personally marked "Aprendido" drop out; everything else stays until
+   * they say so. This is what the Puntos débiles screen lists.
+   */
+  function troubleKeys(allKeys) {
+    const skills = CPE.store.get('skills');
+    return allKeys
+      .filter((k) => {
+        const rec = skills[k];
+        if (!rec || rec.seen === 0) return false;
+        if (CPE.words.skillLearned(k)) return false;
+        return rec.wrong > 0 || rec.right === 0;
+      })
+      .map((k) => {
+        const rec = skills[k];
+        return { k, acc: Math.round((rec.right / rec.seen) * 100), rec };
+      })
+      .sort((a, b) => a.acc - b.acc || b.rec.wrong - a.rec.wrong)
+      .map((x) => x.k);
+  }
+
   /** Ranks any key list by urgency so a session always starts where it hurts. */
   function rank(keys) {
     const now = Date.now();
@@ -158,6 +181,6 @@
 
   CPE.srs = {
     INTERVALS, MAX_BOX, MASTER_BOX,
-    grade, isDue, urgency, dueKeys, weakKeys, rank, overview, band, record, projected
+    grade, isDue, urgency, dueKeys, weakKeys, troubleKeys, rank, overview, band, record, projected
   };
 }(window.CPE));

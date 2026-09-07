@@ -56,7 +56,8 @@
     bolt: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" fill="currentColor"/>',
     exam: '<path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12h7M9 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
     redo: '<path d="M4 12a8 8 0 1 1 2.3 5.7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M4 6v5h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
-    cards: '<rect x="3" y="6" width="14" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 3h11a3 3 0 0 1 3 3v10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>'
+    cards: '<rect x="3" y="6" width="14" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7 3h11a3 3 0 0 1 3 3v10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    target: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>'
   };
 
   function action(opts) {
@@ -87,6 +88,7 @@
     const weak = CPE.content.weakSkills(5);
     const totals = store.get('totals');
     const pending = CPE.words.pending();
+    const trouble = CPE.srs.troubleKeys(keys);
 
     host.innerHTML = '';
     const frag = el('div.stagger', null);
@@ -136,6 +138,15 @@
         title: 'Entrenamiento rápido',
         sub: '15 huecos sueltos, elegidos por el algoritmo',
         onclick: () => CPE.app.startDrill({ n: 15 })
+      }),
+      action({
+        icon: ICONS.target,
+        title: 'Puntos débiles',
+        sub: trouble.length
+          ? trouble.length + ' patrones al 0% o con fallos · random en contextos nuevos'
+          : 'Todavía no hay puntos débiles detectados',
+        badge: trouble.length,
+        onclick: () => CPE.app.go('weak')
       }),
       action({
         icon: ICONS.redo,

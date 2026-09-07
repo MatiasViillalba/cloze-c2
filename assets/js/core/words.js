@@ -88,8 +88,39 @@
     CPE.store.update(() => {
       const r = rec(word);
       r.learned = !!value;
+      r.mark = value ? 'yes' : 'no';   /* pinta el botón: verde o rojo */
       r.lastAt = Date.now();
       if (!value) r.streak = 0;   /* "aún no" la devuelve al circuito de práctica */
+    });
+    CPE.store.flush();
+  }
+
+  /** 'yes' | 'no' | null — lo que decidió el alumno sobre esta palabra. */
+  const markOf = (w) => {
+    const r = info(w);
+    if (!r) return null;
+    return r.mark || (r.learned ? 'yes' : null);
+  };
+
+  /* ------------------------------------------------- Marks by pattern --- */
+
+  /**
+   * The same two buttons, but for a *skill* (word + pattern) rather than a bare
+   * word. The Puntos débiles screen works at this finer grain: TAKE in "take
+   * for granted" can be retired without retiring TAKE everywhere.
+   */
+  function marks() {
+    const state = CPE.store.get();
+    if (!state.marks) state.marks = {};
+    return state.marks;
+  }
+
+  const skillMark = (k) => (marks()[k] || {}).mark || null;
+  const skillLearned = (k) => skillMark(k) === 'yes';
+
+  function setSkillLearned(k, value) {
+    CPE.store.update(() => {
+      marks()[k] = { mark: value ? 'yes' : 'no', at: Date.now() };
     });
     CPE.store.flush();
   }
@@ -111,7 +142,8 @@
   }
 
   CPE.words = {
-    miss, hit, grade, pending, learned, setLearned, looksLearned,
-    isTracked, info, accuracy, counts, key
+    miss, hit, grade, pending, learned, setLearned, looksLearned, markOf,
+    isTracked, info, accuracy, counts, key,
+    skillMark, skillLearned, setSkillLearned
   };
 }(window.CPE));

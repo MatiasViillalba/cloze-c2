@@ -44,6 +44,53 @@
     );
   }
 
+  /**
+   * Text size: two A buttons that nudge one step per tap, with a live sample
+   * underneath so the effect is visible without leaving the screen.
+   */
+  function textSizeRow() {
+    const { SCALE_MIN, SCALE_MAX, SCALE_STEP, clamp } = CPE.util;
+    const sample = el('div.type-sample', {
+      text: 'Hardly had the words left his mouth when he regretted them.'
+    });
+    const readout = el('span.type-size__n');
+    const smaller = el('button.type-size__btn.type-size__btn--sm', { type: 'button', 'aria-label': 'Achicar texto' }, 'A');
+    const bigger = el('button.type-size__btn.type-size__btn--lg', { type: 'button', 'aria-label': 'Agrandar texto' }, 'A');
+
+    function paint(scale) {
+      readout.textContent = Math.round(scale * 100) + '%';
+      smaller.disabled = scale <= SCALE_MIN + 0.001;
+      bigger.disabled = scale >= SCALE_MAX - 0.001;
+    }
+
+    function nudge(delta) {
+      let next = 1;
+      CPE.store.update((s) => {
+        next = clamp((Number(s.settings.textScale) || 1) + delta, SCALE_MIN, SCALE_MAX);
+        s.settings.textScale = next;
+      });
+      CPE.store.flush();
+      CPE.util.applyTextScale(next);
+      CPE.util.haptic('tap');
+      paint(next);
+    }
+
+    smaller.onclick = () => nudge(-SCALE_STEP);
+    bigger.onclick = () => nudge(SCALE_STEP);
+    paint(CPE.util.applyTextScale(CPE.store.get('settings').textScale));
+
+    return el('div.set-row.set-row--stack', null,
+      el('div.row.row--between', null,
+        el('div.set-row__t', null,
+          el('b', { text: 'Tamaño del texto' }),
+          el('span', { text: 'Un toque = un paso. Afecta a textos, ejercicios y explicaciones.' })
+        ),
+        el('div.type-size', null, smaller, readout, bigger)
+      ),
+      sample
+    );
+  }
+
   function render(host) {
     const stats = CPE.content.stats();
     host.innerHTML = '';
@@ -58,19 +105,23 @@
     ));
 
     host.appendChild(el('div.eyebrow', { text: 'Lectura' }));
-    host.appendChild(el('div.set-list', null,
-      segRow('Tamaño del texto', 'Afecta a los textos de examen', 'textSize', [
-        { label: 'A', value: 's' }, { label: 'A', value: 'm' }, { label: 'A', value: 'l' }
-      ], (v) => document.documentElement.setAttribute('data-textsize', v))
-    ));
+    host.appendChild(el('div.set-list', null, textSizeRow()));
 
     host.appendChild(el('div.eyebrow', { text: 'Errores' }));
     const wc = CPE.words.counts();
+    const trouble = CPE.srs.troubleKeys(CPE.content.allKeys()).length;
     host.appendChild(el('div.set-list', null,
       el('button.set-row', { type: 'button', onclick: () => CPE.app.go('mistakes') },
         el('div.set-row__t', null,
           el('b', { text: 'Mis palabras falladas' }),
           el('span', { text: wc.pending + ' en práctica · ' + wc.learned + ' marcadas como aprendidas' })
+        ),
+        el('span.chip.chip--ember', { text: 'Abrir' })
+      ),
+      el('button.set-row', { type: 'button', onclick: () => CPE.app.go('weak') },
+        el('div.set-row__t', null,
+          el('b', { text: 'Puntos débiles' }),
+          el('span', { text: trouble + ' patrones al 0% o con fallos, agrupados por tipo' })
         ),
         el('span.chip.chip--ember', { text: 'Abrir' })
       )

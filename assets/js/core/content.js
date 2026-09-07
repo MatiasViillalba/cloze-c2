@@ -214,6 +214,71 @@
     return out;
   }
 
+  /* ------------------------------------------ Contexts for one skill --- */
+
+  /** Every sentence that tests one exact skill (word *and* pattern). */
+  function contextsForKey(k) {
+    const meta = skills[k];
+    if (!meta) return [];
+    return contextsFor(meta.a).filter((item) => item.k === k);
+  }
+
+  /**
+   * Practice built from skill keys rather than bare words. Each weak skill
+   * contributes its own sentences first; a skill with only one sentence of its
+   * own borrows further contexts of the same word, so a session always has
+   * enough material to feel varied.
+   */
+  function practiceQueueForKeys(keys, opts) {
+    const o = opts || {};
+    const per = o.perKey || 3;
+    const max = o.max || 30;
+    const lanes = [];
+    const used = Object.create(null);
+
+    (keys || []).forEach((k) => {
+      const meta = skills[k];
+      if (!meta) return;
+      const own = CPE.util.shuffle(contextsForKey(k));
+      const spare = CPE.util.shuffle(contextsFor(meta.a).filter((i) => i.k !== k));
+      const lane = [];
+      own.concat(spare).forEach((item) => {
+        if (lane.length >= per || used[item.id]) return;
+        used[item.id] = 1;
+        lane.push(item);
+      });
+      if (lane.length) lanes.push(lane);
+    });
+
+    const out = [];
+    for (let round = 0; round < per && out.length < max; round++) {
+      for (let i = 0; i < lanes.length && out.length < max; i++) {
+        if (lanes[i][round]) out.push(lanes[i][round]);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * What kind of thing a gap actually tests, worked out from its pattern label.
+   * The learner thinks in these categories ("me fallan los idioms"), so the
+   * Puntos débiles screen groups by them.
+   */
+  const TYPES = [
+    { id: 'idiom',      label: 'Modismos',            re: /modismo|idiom/i },
+    { id: 'phrasal',    label: 'Phrasal verbs',       re: /phrasal|part[ií]cula/i },
+    { id: 'collocation',label: 'Colocaciones',        re: /colocaci|collocation/i },
+    { id: 'chunk',      label: 'Expresiones fijas',   re: /frase (fija|preposicional)|expresi|compuesto|partitivo/i },
+    { id: 'preposition',label: 'Preposiciones',       re: /preposici|verbo \+ prep|sustantivo \+ prep/i },
+    { id: 'grammar',    label: 'Gramática y estructura', re: /./ }
+  ];
+
+  function typeOf(pattern) {
+    const p = String(pattern || '');
+    for (let i = 0; i < TYPES.length; i++) if (TYPES[i].re.test(p)) return TYPES[i];
+    return TYPES[TYPES.length - 1];
+  }
+
   /** Every skill the learner has fumbled at least once, worst first. */
   const weakSkills = (limit) => CPE.srs.weakKeys(allKeys(), limit).map(skillMeta);
 
@@ -231,6 +296,7 @@
     registerPassages, registerDrills,
     allKeys, skillMeta, passageById, drillById,
     pickPassage, pickDrills, weakSkills, stats, slug,
-    contextsFor, practiceQueue
+    contextsFor, practiceQueue,
+    contextsForKey, practiceQueueForKeys, typeOf, TYPES
   };
 }(window.CPE));

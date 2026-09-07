@@ -54,32 +54,51 @@
    * "Aprendido" retires the word from mistake practice for good; "Aún no"
    * keeps it in circulation. Nothing else in the app can retire a word.
    */
-  function verdictRow(word, onDone) {
-    const row = el('div.verdict');
-    const info = CPE.words.info(word);
-    const hint = CPE.words.looksLearned(word)
-      ? 'Llevás ' + info.streak + ' aciertos seguidos con esta palabra.'
-      : '¿Ya dominás «' + word + '»?';
+  function verdictRow(item, onDone) {
+    /* Practising by pattern retires the pattern; practising by word retires the
+       word. Either way the decision belongs to the learner, and the button it
+       lands on stays coloured. */
+    const byKey = state && state.byKey;
+    const word = item.a;
+    const current = byKey ? CPE.words.skillMark(item.k) : CPE.words.markOf(word);
 
-    const yes = el('button.verdict__btn.verdict__btn--yes', { type: 'button' }, 'Aprendido');
-    const no = el('button.verdict__btn', { type: 'button' }, 'Aún no');
+    const row = el('div.verdict');
+    const yes = el('button.verdict__btn.verdict__btn--yes' + (current === 'yes' ? '.is-on' : ''), {
+      type: 'button', 'aria-pressed': current === 'yes' ? 'true' : 'false'
+    }, 'Aprendido');
+    const no = el('button.verdict__btn.verdict__btn--no' + (current === 'no' ? '.is-on' : ''), {
+      type: 'button', 'aria-pressed': current === 'no' ? 'true' : 'false'
+    }, 'Aún no');
+
+    const paint = (mark) => {
+      yes.classList.toggle('is-on', mark === 'yes');
+      no.classList.toggle('is-on', mark === 'no');
+      yes.setAttribute('aria-pressed', mark === 'yes' ? 'true' : 'false');
+      no.setAttribute('aria-pressed', mark === 'no' ? 'true' : 'false');
+    };
 
     yes.onclick = () => {
+      if (byKey) CPE.words.setSkillLearned(item.k, true);
       CPE.words.setLearned(word, true);
       CPE.util.haptic('good');
-      CPE.toast('«' + word + '» no volverá a la práctica de errores', 'good');
-      row.replaceChildren(el('span.verdict__done', { text: '✓ Marcada como aprendida' }));
+      CPE.toast('«' + word + '» no volverá a la práctica', 'good');
+      paint('yes');
       if (onDone) onDone(true);
     };
     no.onclick = () => {
+      if (byKey) CPE.words.setSkillLearned(item.k, false);
       CPE.words.setLearned(word, false);
       CPE.util.haptic('tap');
-      CPE.toast('Seguirá apareciendo hasta que la domines');
-      row.replaceChildren(el('span.verdict__done', { text: '↻ Sigue en práctica' }));
+      CPE.toast('Seguirá apareciendo hasta que lo domines');
+      paint('no');
       if (onDone) onDone(false);
     };
 
-    row.appendChild(el('span.verdict__q', { text: hint }));
+    row.appendChild(el('span.verdict__q', {
+      text: CPE.words.looksLearned(word)
+        ? 'Llevás ' + CPE.words.info(word).streak + ' aciertos seguidos.'
+        : '¿Ya lo dominás?'
+    }));
     row.appendChild(yes);
     row.appendChild(no);
     return row;
@@ -168,11 +187,13 @@
         el('div.explain__txt', { text: item.tip })
       ));
 
-      /* En la práctica de errores, cada palabra la retira el propio alumno. */
-      if (CPE.words.isTracked(item.a)) {
-        feedback.appendChild(verdictRow(item.a, (learned) => {
+      /* En la práctica, cada palabra o patrón lo retira el propio alumno. */
+      if (state.mode === 'practice' || CPE.words.isTracked(item.a)) {
+        feedback.appendChild(verdictRow(item, (learned) => {
           if (!learned) return;
-          state.queue = state.queue.filter((q, i) => i === 0 || q.a !== item.a);
+          state.queue = state.byKey
+            ? state.queue.filter((q, i) => i === 0 || q.k !== item.k)
+            : state.queue.filter((q, i) => i === 0 || q.a !== item.a);
         }));
       }
 
@@ -194,9 +215,11 @@
 
     /* Dos fuentes de cola: el algoritmo de siempre, o —cuando venimos de la
        práctica de errores— varias frases distintas por palabra fallada. */
-    const queue = o.words && o.words.length
-      ? CPE.content.practiceQueue(o.words, { perWord: o.perWord || 3, max: n })
-      : CPE.content.pickDrills(n, { onlyWeak: o.onlyWeak, keys: o.keys });
+    const queue = o.keyPractice && o.keyPractice.length
+      ? CPE.content.practiceQueueForKeys(o.keyPractice, { perKey: o.perKey || 3, max: n })
+      : o.words && o.words.length
+        ? CPE.content.practiceQueue(o.words, { perWord: o.perWord || 3, max: n })
+        : CPE.content.pickDrills(n, { onlyWeak: o.onlyWeak, keys: o.keys });
 
     state = {
       host,
@@ -208,7 +231,8 @@
       wrongKeys: [],
       wrongWords: [],
       onlyWeak: !!o.onlyWeak,
-      mode: o.words && o.words.length ? 'practice' : 'drill',
+      mode: (o.keyPractice && o.keyPractice.length) || (o.words && o.words.length) ? 'practice' : 'drill',
+      byKey: !!(o.keyPractice && o.keyPractice.length),
       result: null
     };
 

@@ -21,10 +21,11 @@
         showTips: true,
         instantFeedback: false,
         dailyGoal: 24,
-        textSize: 'm'
+        textScale: 1
       },
       skills: {},              /* key -> { box, seen, right, wrong, due, last, streak } */
-      words: {},               /* WORD -> { w, wrong, right, streak, learned, lastAt } */
+      words: {},               /* WORD -> { w, wrong, right, streak, learned, mark, lastAt } */
+      marks: {},               /* skill key -> { mark: 'yes'|'no', at } */
       exercises: {},           /* id  -> { attempts, best, lastScore, lastAt } */
       history: {},             /* dayKey -> { items, right } */
       streak: { count: 0, best: 0, lastDay: null },
@@ -44,6 +45,11 @@
         if (parsed && parsed.v === SCHEMA) {
           state = Object.assign(blank(), parsed);
           state.settings = Object.assign(blank().settings, parsed.settings || {});
+          /* 1.0 guardaba tres tamaños fijos; 1.2 usa una escala continua. */
+          if (state.settings.textSize && !parsed.settings.textScale) {
+            state.settings.textScale = { s: 0.88, m: 1, l: 1.16 }[state.settings.textSize] || 1;
+          }
+          delete state.settings.textSize;
         }
       }
     } catch (err) {

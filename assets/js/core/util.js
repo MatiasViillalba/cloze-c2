@@ -120,5 +120,24 @@
     try { navigator.vibrate(map[kind] || 8); } catch (e) { /* ignore */ }
   }
 
-  CPE.util = { $, $$, el, esc, norm, matches, rng, shuffle, sample, dayKey, daysBetween, pct, clamp, haptic, DAY };
+  /* ---------------------------------------------------------- Text size --- */
+
+  /* One notch per tap on the A buttons in Ajustes, within sane bounds. */
+  const SCALE_MIN = 0.78;
+  const SCALE_MAX = 1.5;
+  const SCALE_STEP = 0.06;
+
+  /** Writes the reading scale onto <html>; everything readable derives from it. */
+  function applyTextScale(scale) {
+    const v = clamp(Number(scale) || 1, SCALE_MIN, SCALE_MAX);
+    document.documentElement.style.setProperty('--read-scale', String(v));
+    return v;
+  }
+
+  CPE.applyTextScale = applyTextScale;
+  CPE.util = {
+    $, $$, el, esc, norm, matches, rng, shuffle, sample, dayKey, daysBetween,
+    pct, clamp, haptic, applyTextScale, DAY,
+    SCALE_MIN, SCALE_MAX, SCALE_STEP
+  };
 }(window.CPE));
