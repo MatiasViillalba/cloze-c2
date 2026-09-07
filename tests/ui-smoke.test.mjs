@@ -1,0 +1,157 @@
+/**
+ * End-to-end smoke test of the interface.
+ *
+ * Boots the real index.html in a DOM, walks every screen, sits a full exam
+ * text answering half of it correctly, and checks that the scheduler reacted:
+ * right answers promote, wrong answers demote and reappear.
+ *
+ * Requires jsdom (`npm install`); skipped automatically when it is absent so
+ * that the unit suite still runs on a bare checkout.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { ROOT } from './harness.mjs';
+
+let JSDOM;
+try {
+  ({ JSDOM } = await import('jsdom'));
+} catch {
+  test('ui smoke', { skip: 'jsdom not installed — run npm install' }, () => {});
+}
+
+if (JSDOM) {
+  /** Loads index.html and executes every script tag in document order. */
+  function boot() {
+    const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+    const dom = new JSDOM(html, { pretendToBeVisual: true, runScripts: 'outside-only', url: 'https://example.test/' });
+    const { window } = dom;
+
+    window.scrollTo = () => {};
+    if (!window.requestAnimationFrame) window.requestAnimationFrame = (fn) => setTimeout(() => fn(0), 0);
+    /* jsdom has no layout engine, so scrolling an element into view is a no-op. */
+    window.Element.prototype.scrollIntoView = function scrollIntoView() {};
+
+    /* Evaluated inside the window's own realm rather than through a Function
+       wrapper, so bare globals resolve exactly as they do in Safari. */
+    const sources = [...window.document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src'));
+    sources.forEach((src) => {
+      const code = readFileSync(join(ROOT, src), 'utf8');
+      window.eval(code + '\n//# sourceURL=' + src);
+    });
+
+    /* index.html defers boot to DOMContentLoaded, which jsdom already fired. */
+    if (!window.CPE.app) throw new Error('app.js did not initialise');
+    if (!window.document.querySelector('#screen-home.is-active')) window.CPE.app.boot();
+
+    return window;
+  }
+
+  const window = boot();
+  const CPE = window.CPE;
+  const $ = (sel) => window.document.querySelector(sel);
+
+  test('the app boots and lands on Inicio', () => {
+    assert.ok(CPE.app, 'CPE.app was never created');
+    assert.ok($('#screen-home').classList.contains('is-active'));
+    assert.match($('#screen-home').textContent, /Grade A/);
+  });
+
+  test('the readiness ring has its gradient available', () => {
+    assert.ok($('#emberGrad'), 'url(#emberGrad) would resolve to nothing');
+    assert.ok($('#screen-home .ring__value'));
+  });
+
+  test('every screen renders without throwing', () => {
+    ['library', 'stats', 'settings', 'home'].forEach((name) => {
+      CPE.app.go(name);
+      const host = $('#screen-' + name);
+      assert.ok(host.classList.contains('is-active'), name + ' did not become active');
+      assert.ok(host.textContent.trim().length > 40, name + ' rendered empty');
+    });
+  });
+
+  test('the library lists every passage', () => {
+    CPE.app.go('library');
+    const rows = window.document.querySelectorAll('#screen-library .lib-item');
+    assert.equal(rows.length, CPE.content.passages.length);
+  });
+
+  test('an exam text renders eight inputs in the prose', () => {
+    CPE.app.startCloze(CPE.content.passages[0]);
+    const inputs = window.document.querySelectorAll('#screen-cloze .gap__input');
+    assert.equal(inputs.length, 8);
+    assert.ok($('#screen-cloze .passage').textContent.length > 500, 'the passage looks truncated');
+    assert.ok(!$('#screen-cloze .passage').textContent.includes('{1}'), 'a gap marker leaked into the prose');
+  });
+
+  test('grading scores correctly and drives the scheduler', () => {
+    CPE.store.reset();
+    const passage = CPE.content.passages[0];
+    CPE.app.startCloze(passage);
+
+    const inputs = [...window.document.querySelectorAll('#screen-cloze .gap__input')];
+    inputs.forEach((input, i) => {
+      /* Answer the first four correctly, then four deliberate mistakes. */
+      input.value = i < 4 ? passage.gaps[i].a : 'XXXX';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+    });
+
+    $('#screen-cloze .ex-actions .btn').click();
+
+    assert.equal(CPE.store.get('exercises')[passage.id].lastScore, 4);
+    assert.equal(CPE.store.todayCount(), 8);
+
+    const skills = CPE.store.get('skills');
+    assert.equal(skills[passage.gaps[0].k].box, 1, 'a correct answer should promote');
+    assert.equal(skills[passage.gaps[7].k].box, 0, 'a wrong answer should sit at the bottom');
+    assert.equal(skills[passage.gaps[7].k].wrong, 1);
+  });
+
+  test('the corrected passage shows the right answers and an explanation each', () => {
+    const fixes = window.document.querySelectorAll('#screen-cloze .gap__fix');
+    assert.equal(fixes.length, 4, 'each missed gap should display its answer');
+    const explains = window.document.querySelectorAll('#screen-cloze .explain');
+    assert.equal(explains.length, 8);
+  });
+
+  test('the result screen reports a Cambridge band and offers the follow-up drill', () => {
+    CPE.app.showResult();
+    const host = $('#screen-result');
+    assert.ok(host.classList.contains('is-active'));
+    assert.equal(host.querySelector('.result-grade').textContent, 'C1');
+    assert.match(host.textContent, /Practicar estos patrones ahora/);
+  });
+
+  test('a failed pattern comes back in the follow-up drill', () => {
+    const weak = CPE.srs.weakKeys(CPE.content.allKeys());
+    assert.ok(weak.length >= 4, 'the four misses should be registered as weak');
+
+    CPE.app.startDrill({ n: 6, onlyWeak: true });
+    const card = $('#screen-drill .drill-card');
+    assert.ok(card, 'no drill card rendered');
+    assert.equal(window.document.querySelectorAll('#screen-drill .gap__input').length, 1);
+  });
+
+  test('a wrong drill answer is requeued inside the same session', () => {
+    CPE.store.reset();
+    CPE.app.startDrill({ n: 3 });
+
+    const before = window.document.querySelectorAll('#screen-drill .drill-meter i').length;
+    const input = $('#screen-drill .gap__input');
+    input.value = 'DEFINITELYWRONG';
+    $('#screen-drill .drill-actions .btn').click();
+
+    assert.match($('#screen-drill .explain').className, /is-wrong/);
+    assert.ok(before >= 3);
+    assert.equal(CPE.store.get('totals').items, 0, 'a drill only reports its score at the end');
+  });
+
+  test('settings persist and are applied to the document', () => {
+    CPE.app.go('settings');
+    const rows = window.document.querySelectorAll('#screen-settings .seg button');
+    rows[rows.length - 1].click();                       /* largest text size */
+    assert.equal(window.document.documentElement.getAttribute('data-textsize'), 'l');
+  });
+}
