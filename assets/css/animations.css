@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Motion — keyframes and micro-interactions
+   ========================================================================== */
+
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(10px) scale(.995); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(.72); }
+  60%  { opacity: 1; transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(14px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(8px) scale(.96); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  18%  { transform: translateX(-5px); }
+  38%  { transform: translateX(4px); }
+  58%  { transform: translateX(-3px); }
+  78%  { transform: translateX(2px); }
+}
+
+@keyframes drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 5vh, 0) scale(1.12); }
+}
+@keyframes drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to   { transform: translate3d(-7vw, -6vh, 0) scale(.92); }
+}
+@keyframes drift-c {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(8vw, -4vh, 0); }
+}
+
+/* Card entrance: staggered via --i custom property. */
+.stagger > * {
+  animation: screen-in var(--t-med) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* Celebratory pulse when a session is finished at Grade A level. */
+@keyframes halo {
+  0%   { box-shadow: 0 0 0 0 rgba(255,106,0,.55); }
+  70%  { box-shadow: 0 0 0 26px rgba(255,106,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,106,0,0); }
+}
+.halo { animation: halo 1.5s var(--ease-out) 2; border-radius: var(--r-lg); }
+
+/* Skeleton shimmer for any deferred content. */
+@keyframes shimmer { to { background-position-x: -200%; } }
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.11) 37%, rgba(255,255,255,.05) 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .aurora__blob { animation: none; }
+}
