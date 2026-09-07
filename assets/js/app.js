@@ -66,11 +66,25 @@
     go('drill', opts || { n: 15 });
   }
 
+  /** Practice built from the mistake book: several contexts per missed word. */
+  function startPractice(words, perWord) {
+    const list = words && words.length ? words : CPE.words.pending().map((r) => r.w);
+    if (!list.length) { CPE.toast('No hay palabras pendientes. ¡Bien ahí!', 'good'); return; }
+    startDrill({
+      words: list,
+      perWord: perWord || 3,
+      n: Math.min(30, Math.max(6, list.length * (perWord || 3)))
+    });
+  }
+
   /**
-   * The smart session: if anything is overdue, warm up on those exact gaps;
-   * otherwise go straight into a full exam text.
+   * The smart session: mistakes first (that is where the marks are), then any
+   * overdue pattern, and only then a fresh exam text.
    */
   function startSmart() {
+    const pending = CPE.words.pending();
+    if (pending.length >= 3) { startPractice(pending.slice(0, 6).map((r) => r.w)); return; }
+
     const keys = CPE.content.allKeys();
     const weak = CPE.srs.weakKeys(keys);
     if (weak.length >= 5) startDrill({ n: Math.min(12, weak.length), onlyWeak: true });
@@ -135,7 +149,7 @@
   function openDeepLink() {
     const target = new URLSearchParams(location.search).get('go');
     if (target === 'smart') startSmart();
-    else if (target === 'weak') startDrill({ n: 15, onlyWeak: true });
+    else if (target === 'weak') go('mistakes');
   }
 
   function boot() {
@@ -149,7 +163,7 @@
     registerServiceWorker();
   }
 
-  CPE.app = { go, back, startCloze, startDrill, startSmart, showResult, boot, refreshStreakPill };
+  CPE.app = { go, back, startCloze, startDrill, startSmart, startPractice, showResult, boot, refreshStreakPill };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

@@ -1,8 +1,9 @@
 /**
  * Settings screen.
  *
- * Progress lives in localStorage, which a browser is entitled to clear. Export
- * and import are therefore first-class here rather than a hidden extra.
+ * Deliberately harmless: there is nothing on this screen that can destroy
+ * months of progress with a mis-tap. No export, no import, no reset — the
+ * study data simply lives on the device.
  */
 (function (CPE) {
   'use strict';
@@ -43,80 +44,6 @@
     );
   }
 
-  function exportProgress() {
-    const data = CPE.store.exportJSON();
-    const name = 'cloze-c2-progreso-' + CPE.util.dayKey() + '.json';
-
-    /* A Blob download works in Safari on iOS 13+; if it is blocked, fall back
-       to putting the JSON on screen so it can be copied by hand. */
-    try {
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = el('a', { href: url, download: name });
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-      CPE.toast('Progreso exportado', 'good');
-    } catch (err) {
-      const body = el('div', null,
-        el('div.h2', { text: 'Copiá este texto' }),
-        el('div.muted', { style: 'margin:8px 0 12px', text: 'Guardalo en Notas. Podés restaurarlo desde "Importar progreso".' }),
-        el('textarea', {
-          'data-selectable': true,
-          readonly: true,
-          style: 'width:100%;height:220px;background:var(--surface-sunken);color:var(--fg-soft);border:1px solid var(--line);border-radius:12px;padding:10px;font-family:var(--font-mono);font-size:12px'
-        }, data)
-      );
-      CPE.sheet.open(body);
-    }
-  }
-
-  function importProgress() {
-    const area = el('textarea', {
-      placeholder: 'Pegá acá el JSON exportado…',
-      'data-selectable': true,
-      style: 'width:100%;height:180px;background:var(--surface-sunken);color:var(--fg-soft);border:1px solid var(--line);border-radius:12px;padding:10px;font-family:var(--font-mono);font-size:12px'
-    });
-    const body = el('div', null,
-      el('div.h2', { text: 'Importar progreso' }),
-      el('div.muted', { style: 'margin:8px 0 12px', text: 'Esto reemplaza por completo el progreso actual del dispositivo.' }),
-      area,
-      el('button.btn.btn--primary.btn--block', {
-        type: 'button',
-        style: 'margin-top:12px',
-        onclick: () => {
-          try {
-            CPE.store.importJSON(area.value);
-            CPE.sheet.close();
-            CPE.toast('Progreso restaurado', 'good');
-            CPE.app.go('home');
-          } catch (err) {
-            CPE.toast('No se pudo leer ese archivo', 'bad');
-          }
-        }
-      }, 'Restaurar')
-    );
-    CPE.sheet.open(body);
-  }
-
-  function confirmReset() {
-    const body = el('div', null,
-      el('div.h2', { text: '¿Borrar todo el progreso?' }),
-      el('div.muted', { style: 'margin:8px 0 16px', text: 'Se pierden la racha, las estadísticas y las cajas de repetición espaciada. Los ejercicios siguen intactos.' }),
-      el('button.btn.btn--danger.btn--block', {
-        type: 'button',
-        onclick: () => {
-          CPE.store.reset();
-          CPE.sheet.close();
-          CPE.toast('Progreso borrado');
-          CPE.app.go('home');
-        }
-      }, 'Sí, borrar todo'),
-      el('button.btn.btn--quiet.btn--block', { type: 'button', style: 'margin-top:6px', onclick: CPE.sheet.close }, 'Cancelar')
-    );
-    CPE.sheet.open(body);
-  }
-
   function render(host) {
     const stats = CPE.content.stats();
     host.innerHTML = '';
@@ -137,24 +64,20 @@
       ], (v) => document.documentElement.setAttribute('data-textsize', v))
     ));
 
-    host.appendChild(el('div.eyebrow', { text: 'Tus datos' }));
-    const dataList = el('div.set-list');
-    const exportRow = el('button.set-row', { type: 'button', onclick: exportProgress },
-      el('div.set-row__t', null, el('b', { text: 'Exportar progreso' }), el('span', { text: 'Guardá una copia antes de cambiar de teléfono' })),
-      el('span.chip.chip--ember', { text: 'JSON' })
-    );
-    const importRow = el('button.set-row', { type: 'button', onclick: importProgress },
-      el('div.set-row__t', null, el('b', { text: 'Importar progreso' }), el('span', { text: 'Restaurar desde una copia' })),
-      el('span.chip', { text: 'Pegar' })
-    );
-    const resetRow = el('button.set-row', { type: 'button', onclick: confirmReset },
-      el('div.set-row__t', null, el('b', { text: 'Borrar progreso' }), el('span', { text: 'Empezar de cero' })),
-      el('span.chip.chip--bad', { text: 'Borrar' })
-    );
-    dataList.appendChild(exportRow);
-    dataList.appendChild(importRow);
-    dataList.appendChild(resetRow);
-    host.appendChild(dataList);
+    host.appendChild(el('div.eyebrow', { text: 'Errores' }));
+    const wc = CPE.words.counts();
+    host.appendChild(el('div.set-list', null,
+      el('button.set-row', { type: 'button', onclick: () => CPE.app.go('mistakes') },
+        el('div.set-row__t', null,
+          el('b', { text: 'Mis palabras falladas' }),
+          el('span', { text: wc.pending + ' en práctica · ' + wc.learned + ' marcadas como aprendidas' })
+        ),
+        el('span.chip.chip--ember', { text: 'Abrir' })
+      )
+    ));
+
+    /* Sin exportar, importar ni borrar: un toque accidental no puede tirar
+       abajo el progreso de meses. Los datos viven en este dispositivo. */
 
     if (!CPE.store.available) {
       host.appendChild(el('div.card', { style: 'margin-top:12px;border-color:rgba(255,197,49,.35)' },

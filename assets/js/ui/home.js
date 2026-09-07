@@ -86,6 +86,7 @@
     const goal = store.get('settings').dailyGoal;
     const weak = CPE.content.weakSkills(5);
     const totals = store.get('totals');
+    const pending = CPE.words.pending();
 
     host.innerHTML = '';
     const frag = el('div.stagger', null);
@@ -99,7 +100,8 @@
           el('div.hero__sub', {
             text: ov.seen === 0
               ? 'Empezá por una sesión inteligente: la app elige por vos y aprende de tus fallos.'
-              : ov.mastered + ' de ' + ov.total + ' patrones dominados · ' + ov.accuracy + '% de acierto histórico'
+              : 'Nivel actual: ' + ov.grade.label + ' · ' + ov.seen + ' de ' + ov.total +
+                ' patrones vistos · ' + ov.accuracy + '% de acierto'
           })
         ),
         ring(ov.readiness)
@@ -137,13 +139,12 @@
       }),
       action({
         icon: ICONS.redo,
-        title: 'Repaso de fallos',
-        sub: weak.length ? 'Solo los patrones que fallaste' : 'Todavía no tenés fallos registrados',
-        badge: weak.length ? CPE.srs.weakKeys(keys).length : 0,
-        onclick: () => {
-          if (!CPE.srs.weakKeys(keys).length) { CPE.toast('Sin fallos pendientes. ¡Seguí así!', 'good'); return; }
-          CPE.app.startDrill({ n: 15, onlyWeak: true });
-        }
+        title: 'Practicar mis errores',
+        sub: pending.length
+          ? pending.length + ' palabras · cada una en varios contextos distintos'
+          : 'Todavía no tenés palabras falladas',
+        badge: pending.length,
+        onclick: () => CPE.app.go('mistakes')
       })
     );
     frag.appendChild(actions);
@@ -156,8 +157,26 @@
       el('div.tile', null, el('b', { text: ov.due + '' }), el('span', { text: 'a repasar hoy' }))
     ));
 
-    /* --- Weak skills ----------------------------------------------------- */
-    if (weak.length) {
+    /* --- Mistake words --------------------------------------------------- */
+    if (pending.length) {
+      frag.appendChild(el('div.row.row--between.eyebrow', { style: '--i:4' },
+        el('span', { text: 'Palabras que fallaste' }),
+        el('button.chip.chip--ember', { type: 'button', onclick: () => CPE.app.go('mistakes') }, 'Ver todas')
+      ));
+      const list = el('div.weak-list', { style: '--i:5' });
+      pending.slice(0, 6).forEach((r) => {
+        const contexts = CPE.content.contextsFor(r.w).length;
+        list.appendChild(el('button.weak.weak--tap', {
+          type: 'button',
+          onclick: () => CPE.app.startPractice([r.w], Math.min(6, Math.max(3, contexts)))
+        },
+          el('div.weak__word', { text: r.w }),
+          el('div.weak__pat', { text: contexts + ' contextos · ' + CPE.words.accuracy(r) + '% de acierto' }),
+          el('span.chip', { text: 'Practicar' })
+        ));
+      });
+      frag.appendChild(list);
+    } else if (weak.length) {
       frag.appendChild(el('div.eyebrow', { style: '--i:4', text: 'Puntos débiles' }));
       const list = el('div.weak-list', { style: '--i:5' });
       weak.forEach((s) => {

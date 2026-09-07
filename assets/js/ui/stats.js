@@ -33,6 +33,19 @@
     return grid;
   }
 
+  /** One ingredient of the readiness score, with the weight it carries. */
+  function mixRow(label, note, value, weight) {
+    return el('div.mix__row', null,
+      el('div.mix__lab', null,
+        el('b', { text: label }),
+        el('span', { text: note })
+      ),
+      el('div.bar.bar--thin', null, el('div.bar__fill', { style: 'width:' + value + '%' })),
+      el('div.mix__n', { text: value + '%' }),
+      el('div.mix__w', { text: weight + '%' })
+    );
+  }
+
   function boxChart(ov) {
     const wrap = el('div.box-bars');
     const max = Math.max(1, Math.max.apply(null, ov.boxes));
@@ -88,18 +101,32 @@
     frag.appendChild(el('div.card.card--hero', { style: '--i:0' },
       el('div.hero', null,
         el('div.hero__copy', null,
-          el('div.hero__grade', { text: 'Preparación' }),
-          el('div.hero__title', { text: ov.mastered + ' de ' + ov.total }),
-          el('div.hero__sub', { text: 'patrones dominados (caja 4 o superior). El objetivo de Grade A es llegar al 90%.' })
+          el('div.hero__grade', { text: 'Preparación para el CPE' }),
+          el('div.hero__title', { text: ov.grade.label }),
+          el('div.hero__sub', { text: ov.readiness + '% del camino al Grade A. La banda A empieza en 90%.' })
         ),
         CPE.ui.ring(ov.readiness)
+      ),
+      /* De qué está hecho ese porcentaje, para que no sea un número mágico. */
+      el('div.mix', null,
+        mixRow('Cobertura', 'patrones ya vistos (' + ov.seen + '/' + ov.total + ')', ov.coverage, 45),
+        mixRow('Solidez', 'cuán alto están en las cajas de repaso', ov.solidity, 40),
+        mixRow('Precisión', 'aciertos sobre todo lo respondido', ov.accuracy, 15)
       )
     ));
 
+    const wc = CPE.words.counts();
     frag.appendChild(el('div.tiles', { style: '--i:1; margin-top:12px' },
-      el('div.tile', null, el('b', { text: ov.accuracy + '%' }), el('span', { text: 'precisión global' })),
+      el('div.tile', null, el('b', { text: String(ov.mastered) }), el('span', { text: 'patrones dominados' })),
       el('div.tile', null, el('b', { text: String(totals.items) }), el('span', { text: 'huecos resueltos' })),
       el('div.tile', null, el('b', { text: String(streak.best || 0) }), el('span', { text: 'mejor racha' }))
+    ));
+
+    frag.appendChild(el('div.tiles', { style: '--i:1; margin-top:10px' },
+      el('button.tile.tile--tap', { type: 'button', onclick: () => CPE.app.go('mistakes') },
+        el('b', { text: String(wc.pending) }), el('span', { text: 'palabras a practicar' })),
+      el('div.tile', null, el('b', { text: String(wc.learned) }), el('span', { text: 'marcadas aprendidas' })),
+      el('div.tile', null, el('b', { text: String(ov.due) }), el('span', { text: 'a repasar hoy' }))
     ));
 
     frag.appendChild(el('div.eyebrow', { style: '--i:2', text: 'Constancia (12 semanas)' }));

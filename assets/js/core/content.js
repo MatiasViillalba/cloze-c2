@@ -115,6 +115,105 @@
     return CPE.util.shuffle(out);
   }
 
+  /* ------------------------------------------- Contexts for one word --- */
+
+  /**
+   * Every sentence in the whole bank that tests a given answer, whatever the
+   * pattern: the drills that were written for it plus one sentence lifted out
+   * of each exam passage that contains it. That is what makes mistake practice
+   * feel different every time instead of replaying the same card.
+   */
+  let contextIndex = null;
+
+  /** Pulls the single sentence around a gap, with the other gaps filled in. */
+  function sentenceFor(passage, gap) {
+    const MARK = String.fromCharCode(0);
+    const filled = String(passage.text).replace(/\s+/g, ' ')
+      .replace(/\{(\d+)\}/g, (m, n) => {
+        const i = Number(n);
+        if (i === gap.n) return MARK;
+        const other = passage.gaps[i - 1];
+        return other ? other.a.toLowerCase() : '…';
+      });
+
+    const parts = filled.match(/[^.!?]+[.!?]*/g) || [filled];
+    let hit = null;
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].indexOf(MARK) !== -1) { hit = parts[i]; break; }
+    }
+    if (!hit) return null;
+
+    const s = hit.trim().replace(MARK, '{1}');
+    if (s.length < 34) return null;             /* fragmentos sin contexto útil */
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function buildContexts() {
+    const idx = Object.create(null);
+    const push = (word, item) => { (idx[word] || (idx[word] = [])).push(item); };
+
+    drills.forEach((d) => push(d.a, d));
+
+    passages.forEach((p) => {
+      p.gaps.forEach((g) => {
+        const s = sentenceFor(p, g);
+        if (!s) return;
+        push(g.a, {
+          id: 'p:' + p.id + ':' + g.n,
+          a: g.a,
+          alt: g.alt,
+          k: g.k,
+          p: g.p,
+          s: s,
+          tip: g.tip,
+          src: p.title,
+          fromPassage: p.id
+        });
+      });
+    });
+
+    contextIndex = idx;
+    return idx;
+  }
+
+  const contextsFor = (word) => (contextIndex || buildContexts())[String(word).toUpperCase()] || [];
+
+  /**
+   * Builds the mistake-practice queue: several *different* sentences per word,
+   * interleaved so the same word never comes twice in a row.
+   */
+  function practiceQueue(words, opts) {
+    const o = opts || {};
+    const perWord = o.perWord || 3;
+    const max = o.max || 30;
+    const lanes = [];
+
+    (words || []).forEach((w) => {
+      const pool = CPE.util.shuffle(contextsFor(w));
+      if (!pool.length) return;
+
+      /* Prefer one sentence per source before repeating a source. */
+      const seenSrc = Object.create(null);
+      const first = [], rest = [];
+      pool.forEach((item) => {
+        const s = item.src || '';
+        if (seenSrc[s]) rest.push(item); else { seenSrc[s] = 1; first.push(item); }
+      });
+
+      /* Nunca se repite una frase: si la palabra tiene menos contextos que los
+         pedidos, sencillamente aporta menos ejercicios a la sesión. */
+      lanes.push(first.concat(rest).slice(0, perWord));
+    });
+
+    const out = [];
+    for (let round = 0; round < perWord && out.length < max; round++) {
+      for (let i = 0; i < lanes.length && out.length < max; i++) {
+        if (lanes[i][round]) out.push(lanes[i][round]);
+      }
+    }
+    return out;
+  }
+
   /** Every skill the learner has fumbled at least once, worst first. */
   const weakSkills = (limit) => CPE.srs.weakKeys(allKeys(), limit).map(skillMeta);
 
@@ -131,6 +230,7 @@
     passages, drills, skills,
     registerPassages, registerDrills,
     allKeys, skillMeta, passageById, drillById,
-    pickPassage, pickDrills, weakSkills, stats, slug
+    pickPassage, pickDrills, weakSkills, stats, slug,
+    contextsFor, practiceQueue
   };
 }(window.CPE));

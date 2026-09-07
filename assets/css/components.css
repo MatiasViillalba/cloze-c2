@@ -98,7 +98,11 @@
   font-weight: 650;
   color: var(--fg-soft);
   white-space: nowrap;
+  font-family: inherit;                     /* los chips también se usan como <button> */
+  letter-spacing: normal; text-transform: none;
 }
+button.chip { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.chip:active { transform: scale(.94); }
 .chip--ember { background: var(--ember-grad-soft); border-color: rgba(255,154,61,.3); color: var(--ember-300); }
 .chip--good  { background: var(--good-soft); border-color: rgba(53,208,127,.28); color: var(--good); }
 .chip--bad   { background: var(--bad-soft);  border-color: rgba(255,77,94,.28);  color: #FF8792; }

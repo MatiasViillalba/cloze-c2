@@ -21,6 +21,7 @@ const CORE = [
   'assets/js/core/util.js',
   'assets/js/core/store.js',
   'assets/js/core/srs.js',
+  'assets/js/core/words.js',
   'assets/js/core/content.js'
 ];
 

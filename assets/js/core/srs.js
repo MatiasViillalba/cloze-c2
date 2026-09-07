@@ -87,13 +87,24 @@
   }
 
   /**
-   * Overall readiness. `mastered / total` is the headline "Grade A" number;
-   * boxes[] powers the distribution chart on the Progreso screen.
+   * Overall readiness — the number in the ring.
+   *
+   * A bare `mastered / total` never moves: the bank holds hundreds of patterns
+   * and box 4 takes a week of correct answers, so the ring sat at 0% for the
+   * first fortnight, which is exactly when motivation matters most. The score
+   * is therefore a composite of the three things a Grade A actually needs:
+   *
+   *   cobertura  45%  how much of the bank you have attempted at all
+   *   solidez    40%  how high in the Leitner boxes what you have seen sits
+   *   precisión  15%  your hit rate across every answer ever given
+   *
+   * Every one of them has to be near the ceiling to reach 90, which is where
+   * Grade A starts — but the needle moves from the very first session.
    */
   function overview(allKeys) {
     const skills = CPE.store.get('skills');
     const boxes = [0, 0, 0, 0, 0, 0];
-    let mastered = 0, seen = 0, right = 0, attempts = 0;
+    let mastered = 0, seen = 0, right = 0, attempts = 0, strength = 0;
 
     allKeys.forEach((k) => {
       const rec = skills[k];
@@ -102,18 +113,37 @@
       seen += 1;
       right += rec.right;
       attempts += rec.seen;
+      strength += Math.min(1, rec.box / MASTER_BOX);
       if (rec.box >= MASTER_BOX) mastered += 1;
     });
 
+    const total = allKeys.length;
+    const coverage = total ? seen / total : 0;
+    const solidity = seen ? strength / seen : 0;
+    const accuracy = attempts ? right / attempts : 0;
+    const readiness = Math.round(100 * (0.45 * coverage + 0.40 * solidity + 0.15 * accuracy));
+
     return {
-      total: allKeys.length,
+      total,
       seen,
       mastered,
       boxes,
-      accuracy: attempts ? Math.round((right / attempts) * 100) : 0,
-      readiness: allKeys.length ? Math.round((mastered / allKeys.length) * 100) : 0,
+      accuracy: Math.round(accuracy * 100),
+      coverage: Math.round(coverage * 100),
+      solidity: Math.round(solidity * 100),
+      readiness,
+      grade: projected(readiness),
       due: dueKeys(allKeys).length
     };
+  }
+
+  /** The band the current readiness would put you in on exam day. */
+  function projected(readiness) {
+    if (readiness >= 90) return { g: 'A', label: 'Grade A' };
+    if (readiness >= 78) return { g: 'B', label: 'Grade B' };
+    if (readiness >= 65) return { g: 'C', label: 'Grade C' };
+    if (readiness >= 45) return { g: 'C1', label: 'Nivel C1' };
+    return { g: '—', label: 'En construcción' };
   }
 
   /** Cambridge-style band for a single exercise score. */
@@ -128,6 +158,6 @@
 
   CPE.srs = {
     INTERVALS, MAX_BOX, MASTER_BOX,
-    grade, isDue, urgency, dueKeys, weakKeys, rank, overview, band, record
+    grade, isDue, urgency, dueKeys, weakKeys, rank, overview, band, record, projected
   };
 }(window.CPE));

@@ -121,7 +121,25 @@ if (JSDOM) {
     const host = $('#screen-result');
     assert.ok(host.classList.contains('is-active'));
     assert.equal(host.querySelector('.result-grade').textContent, 'C1');
-    assert.match(host.textContent, /Practicar estos patrones ahora/);
+    assert.match(host.textContent, /Practicar estas palabras en otros contextos/);
+  });
+
+  test('every missed word enters the mistake book with several contexts', () => {
+    const pending = CPE.words.pending();
+    assert.ok(pending.length >= 4, 'las palabras falladas quedan registradas');
+    const queue = CPE.content.practiceQueue(pending.map((r) => r.w), { perWord: 3, max: 30 });
+    assert.ok(queue.length > pending.length, 'cada palabra aporta varias frases');
+    const sentences = new Set(queue.map((q) => q.s));
+    assert.equal(sentences.size, queue.length, 'ninguna frase se repite en la cola');
+  });
+
+  test('"aprendido" retires a word and "aún no" brings it back', () => {
+    const word = CPE.words.pending()[0].w;
+    CPE.words.setLearned(word, true);
+    assert.ok(!CPE.words.pending().some((r) => r.w === word));
+    assert.ok(CPE.words.learned().some((r) => r.w === word));
+    CPE.words.setLearned(word, false);
+    assert.ok(CPE.words.pending().some((r) => r.w === word));
   });
 
   test('a failed pattern comes back in the follow-up drill', () => {

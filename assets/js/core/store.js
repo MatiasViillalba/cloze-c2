@@ -24,6 +24,7 @@
         textSize: 'm'
       },
       skills: {},              /* key -> { box, seen, right, wrong, due, last, streak } */
+      words: {},               /* WORD -> { w, wrong, right, streak, learned, lastAt } */
       exercises: {},           /* id  -> { attempts, best, lastScore, lastAt } */
       history: {},             /* dayKey -> { items, right } */
       streak: { count: 0, best: 0, lastDay: null },

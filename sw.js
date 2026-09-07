@@ -8,7 +8,7 @@
  * app is on the home screen.
  */
 
-const BUILD = '2026.09.06';
+const BUILD = '2026.09.07';
 const CACHE = 'cloze-c2-' + BUILD;
 
 const ASSETS = [
@@ -26,6 +26,7 @@ const ASSETS = [
   './assets/js/core/util.js',
   './assets/js/core/store.js',
   './assets/js/core/srs.js',
+  './assets/js/core/words.js',
   './assets/js/core/content.js',
 
   './assets/js/data/passages-01.js',
@@ -39,12 +40,16 @@ const ASSETS = [
   './assets/js/data/drills-01.js',
   './assets/js/data/drills-02.js',
   './assets/js/data/drills-03.js',
+  './assets/js/data/drills-04.js',
+  './assets/js/data/drills-05.js',
+  './assets/js/data/drills-06.js',
 
   './assets/js/ui/toast.js',
   './assets/js/ui/home.js',
   './assets/js/ui/cloze.js',
   './assets/js/ui/drill.js',
   './assets/js/ui/result.js',
+  './assets/js/ui/mistakes.js',
   './assets/js/ui/library.js',
   './assets/js/ui/stats.js',
   './assets/js/ui/settings.js',

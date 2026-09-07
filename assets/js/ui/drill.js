@@ -40,10 +40,49 @@
       score: right,
       total,
       wrongKeys: state.wrongKeys,
-      title: state.onlyWeak ? 'Repaso de fallos' : 'Entrenamiento rápido',
-      kind: 'drill'
+      wrongWords: state.wrongWords,
+      title: state.mode === 'practice' ? 'Práctica de errores'
+        : state.onlyWeak ? 'Repaso de fallos' : 'Entrenamiento rápido',
+      kind: 'drill',
+      mode: state.mode
     };
     CPE.app.showResult();
+  }
+
+  /**
+   * The two small buttons that put the learner in charge of the mistake book.
+   * "Aprendido" retires the word from mistake practice for good; "Aún no"
+   * keeps it in circulation. Nothing else in the app can retire a word.
+   */
+  function verdictRow(word, onDone) {
+    const row = el('div.verdict');
+    const info = CPE.words.info(word);
+    const hint = CPE.words.looksLearned(word)
+      ? 'Llevás ' + info.streak + ' aciertos seguidos con esta palabra.'
+      : '¿Ya dominás «' + word + '»?';
+
+    const yes = el('button.verdict__btn.verdict__btn--yes', { type: 'button' }, 'Aprendido');
+    const no = el('button.verdict__btn', { type: 'button' }, 'Aún no');
+
+    yes.onclick = () => {
+      CPE.words.setLearned(word, true);
+      CPE.util.haptic('good');
+      CPE.toast('«' + word + '» no volverá a la práctica de errores', 'good');
+      row.replaceChildren(el('span.verdict__done', { text: '✓ Marcada como aprendida' }));
+      if (onDone) onDone(true);
+    };
+    no.onclick = () => {
+      CPE.words.setLearned(word, false);
+      CPE.util.haptic('tap');
+      CPE.toast('Seguirá apareciendo hasta que la domines');
+      row.replaceChildren(el('span.verdict__done', { text: '↻ Sigue en práctica' }));
+      if (onDone) onDone(false);
+    };
+
+    row.appendChild(el('span.verdict__q', { text: hint }));
+    row.appendChild(yes);
+    row.appendChild(no);
+    return row;
   }
 
   function step() {
@@ -102,12 +141,14 @@
       input.style.borderBottomColor = ok ? 'var(--good)' : 'var(--bad)';
 
       CPE.srs.grade(item.k, ok);
+      CPE.words.grade(item.a, ok);
       state.answered += 1;
       state.done.push(ok);
       if (ok) {
         state.right += 1;
       } else {
         state.wrongKeys.push(item.k);
+        state.wrongWords.push(item.a);
         /* Lapse queue: bring it back three cards later, once. */
         if (!item.__repeated) {
           const clone = Object.assign({}, item, { __repeated: true });
@@ -127,6 +168,14 @@
         el('div.explain__txt', { text: item.tip })
       ));
 
+      /* En la práctica de errores, cada palabra la retira el propio alumno. */
+      if (CPE.words.isTracked(item.a)) {
+        feedback.appendChild(verdictRow(item.a, (learned) => {
+          if (!learned) return;
+          state.queue = state.queue.filter((q, i) => i === 0 || q.a !== item.a);
+        }));
+      }
+
       primary.textContent = state.queue.length > 1 ? 'Siguiente' : 'Terminar';
       primary.focus();
     }
@@ -142,7 +191,12 @@
   function render(host, params) {
     const o = params || {};
     const n = o.n || 15;
-    const queue = CPE.content.pickDrills(n, { onlyWeak: o.onlyWeak, keys: o.keys });
+
+    /* Dos fuentes de cola: el algoritmo de siempre, o —cuando venimos de la
+       práctica de errores— varias frases distintas por palabra fallada. */
+    const queue = o.words && o.words.length
+      ? CPE.content.practiceQueue(o.words, { perWord: o.perWord || 3, max: n })
+      : CPE.content.pickDrills(n, { onlyWeak: o.onlyWeak, keys: o.keys });
 
     state = {
       host,
@@ -152,7 +206,9 @@
       answered: 0,
       right: 0,
       wrongKeys: [],
+      wrongWords: [],
       onlyWeak: !!o.onlyWeak,
+      mode: o.words && o.words.length ? 'practice' : 'drill',
       result: null
     };
 

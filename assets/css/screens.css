@@ -73,6 +73,72 @@
 .weak__pip { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.14); }
 .weak__pip.is-on { background: var(--ember-500); box-shadow: 0 0 6px rgba(255,106,0,.7); }
 
+.weak--tap {
+  width: 100%; text-align: left; font: inherit; color: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast) var(--ease-out), border-color var(--t-fast) linear;
+}
+.weak--tap:active { transform: scale(.985); border-color: var(--line-strong); }
+
+/* --- Mistake book ---------------------------------------------------------- */
+.mistake-list { display: grid; gap: 10px; }
+.mistake {
+  padding: 12px 13px 11px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.mistake__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.mistake__word {
+  font: inherit; background: none; border: 0; padding: 0;
+  font-size: 17px; font-weight: 800; letter-spacing: .05em;
+  color: var(--ember-300); text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.mistake__word:active { opacity: .6; }
+.mistake__meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--fg-mute); font-weight: 600; }
+.mistake__meta .dot { opacity: .5; }
+.mistake__acc[data-t="hi"]  { color: var(--good); }
+.mistake__acc[data-t="mid"] { color: var(--warn); }
+.mistake__acc[data-t="lo"]  { color: #FF8792; }
+
+/* The two small verdict buttons: the only way a word leaves practice. */
+.verdict { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.verdict--tight { margin-top: 9px; }
+.verdict__q { flex: 1; min-width: 120px; font-size: 11.5px; color: var(--fg-dim); }
+.verdict__btn {
+  flex: none;
+  padding: 7px 13px; min-height: 34px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-strong);
+  color: var(--fg-soft);
+  font-size: 12.5px; font-weight: 700; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-fast) var(--ease-out), opacity var(--t-fast) linear;
+}
+.verdict__btn:active { transform: scale(.94); }
+.verdict__btn--yes {
+  border-color: rgba(53,208,127,.4);
+  background: var(--good-soft);
+  color: var(--good);
+}
+.verdict__done { font-size: 12px; font-weight: 700; color: var(--good); }
+
+/* --- Readiness breakdown --------------------------------------------------- */
+.mix { display: grid; gap: 9px; margin-top: 16px; }
+.mix__row { display: grid; grid-template-columns: 1fr 78px 40px 34px; align-items: center; gap: 9px; }
+.mix__lab b { display: block; font-size: 12.5px; font-weight: 700; }
+.mix__lab span { display: block; font-size: 10.5px; color: var(--fg-mute); }
+.mix__n { font-size: 12.5px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.mix__w { font-size: 10px; color: var(--fg-mute); text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) {
+  .mix__row { grid-template-columns: 1fr 56px 36px 30px; gap: 7px; }
+}
+
+.tile--tap { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tile--tap:active { transform: scale(.97); }
+
 /* --- Cloze exercise -------------------------------------------------------- */
 .ex-head { padding: 6px 0 14px; }
 .ex-head__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }

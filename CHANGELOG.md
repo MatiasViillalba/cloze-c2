@@ -4,6 +4,36 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-09-07
+
+### Added
+
+- **Mistake book.** Every word missed anywhere in the app is tracked by the word
+  itself, not only by its pattern, and gets its own screen (*Mis errores*).
+- **Practice in many contexts.** Practising a missed word draws several
+  *different* sentences for it — its own drills plus the sentence around that
+  word in every exam passage that contains it. No sentence repeats in a session.
+- **"Aprendido" / "Aún no".** Two small buttons, shown after grading and on the
+  mistake screen, are the only way a word leaves practice. "Aprendido" retires
+  it; "Aún no" keeps it coming back. Failing it again puts it straight back.
+- **324 new drills** (624 in total, 231 distinct target words): particles and
+  prepositions, fixed expressions and grammar words, each written three times in
+  unrelated sentences.
+
+### Changed
+
+- **The readiness ring actually moves.** "% hacia Grade A" is now a composite of
+  coverage (45%), Leitner solidity (40%) and accuracy (15%) instead of
+  `mastered / total`, which sat at 0% for the first fortnight. The Progreso
+  screen shows the three ingredients.
+- The smart session now starts with mistake practice when there are words
+  pending.
+
+### Removed
+
+- Export, import and reset progress from Ajustes: nothing on that screen can
+  destroy months of study with a mis-tap any more.
+
 ## [1.0.0] — 2026-09-06
 
 First release. An installable, offline-first trainer for the Open Cloze section

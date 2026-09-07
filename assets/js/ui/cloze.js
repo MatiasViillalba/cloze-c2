@@ -96,13 +96,15 @@
 
     let score = 0;
     const wrongKeys = [];
+    const wrongWords = [];
 
     state.passage.gaps.forEach((gap) => {
       const given = (state.answers[gap.n] || '').trim();
       const ok = matches(given, gap);
-      if (ok) score += 1; else wrongKeys.push(gap.k);
+      if (ok) score += 1; else { wrongKeys.push(gap.k); wrongWords.push(gap.a); }
 
       CPE.srs.grade(gap.k, ok);
+      CPE.words.grade(gap.a, ok);
 
       const wrap = state.host.querySelector('[data-gap="' + gap.n + '"]');
       const input = wrap.querySelector('input');
@@ -131,7 +133,7 @@
     state.checked = true;
     state.submit.textContent = 'Ver resultado';
     state.submit.disabled = false;
-    state.result = { score, total, wrongKeys, id: state.passage.id, title: state.passage.title, kind: 'cloze' };
+    state.result = { score, total, wrongKeys, wrongWords, id: state.passage.id, title: state.passage.title, kind: 'cloze' };
 
     if (review.scrollIntoView) review.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

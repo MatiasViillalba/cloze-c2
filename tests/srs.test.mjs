@@ -69,7 +69,7 @@ test('weak skills are the ones actually failed, worst first', () => {
   assert.ok(!weak.includes('b'), 'a skill answered correctly is not weak');
 });
 
-test('readiness reflects mastery, not attempts', () => {
+test('readiness blends coverage, solidity and accuracy', () => {
   reset();
   const keys = ['k1', 'k2', 'k3', 'k4'];
   for (let i = 0; i < 4; i++) CPE.srs.grade('k1', true);   /* box 4: mastered */
@@ -77,7 +77,19 @@ test('readiness reflects mastery, not attempts', () => {
   const ov = CPE.srs.overview(keys);
   assert.equal(ov.mastered, 1);
   assert.equal(ov.total, 4);
-  assert.equal(ov.readiness, 25);
+  assert.equal(ov.coverage, 50);                            /* 2 de 4 vistas */
+  assert.equal(ov.accuracy, 100);
+  /* 0.45*0.5 + 0.40*0.625 + 0.15*1 = 0.625 */
+  assert.equal(ov.readiness, 63);
+  assert.equal(ov.grade.g, 'C1');
+});
+
+test('an untouched bank reads zero, a fully mastered one reads 100', () => {
+  reset();
+  assert.equal(CPE.srs.overview(['a', 'b']).readiness, 0);
+  reset();
+  for (let i = 0; i < 5; i++) { CPE.srs.grade('a', true); CPE.srs.grade('b', true); }
+  assert.equal(CPE.srs.overview(['a', 'b']).readiness, 100);
 });
 
 test('bands follow the Cambridge thresholds', () => {

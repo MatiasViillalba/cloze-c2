@@ -10,10 +10,11 @@
   const { el, pct } = CPE.util;
 
   function render(host, params) {
-    const r = (params && params.result) || { score: 0, total: 0, wrongKeys: [], title: '', kind: 'cloze' };
+    const r = (params && params.result) || { score: 0, total: 0, wrongKeys: [], wrongWords: [], title: '', kind: 'cloze' };
     const band = CPE.srs.band(r.score, r.total);
     const percentage = pct(r.score, r.total);
     const unique = r.wrongKeys.filter((k, i, a) => a.indexOf(k) === i);
+    const words = (r.wrongWords || []).filter((w, i, a) => a.indexOf(w) === i);
 
     host.innerHTML = '';
 
@@ -51,7 +52,21 @@
 
     /* --- Next actions ----------------------------------------------------- */
     const actions = el('div.result-actions');
-    if (unique.length) {
+    if (words.length) {
+      const contexts = words.reduce((n, w) => n + CPE.content.contextsFor(w).length, 0);
+      actions.appendChild(el('button.btn.btn--primary.btn--block', {
+        type: 'button',
+        onclick: () => CPE.app.startPractice(words)
+      }, 'Practicar estas palabras en otros contextos'));
+      actions.appendChild(el('div.tiny', {
+        style: 'margin:-2px 0 8px; text-align:center',
+        text: contexts + ' frases distintas disponibles para estas ' + words.length + ' palabras'
+      }));
+      actions.appendChild(el('button.btn.btn--ghost.btn--block', {
+        type: 'button',
+        onclick: () => CPE.app.go('mistakes')
+      }, 'Ver mi lista de errores'));
+    } else if (unique.length) {
       actions.appendChild(el('button.btn.btn--primary.btn--block', {
         type: 'button',
         onclick: () => CPE.app.startDrill({ n: Math.max(8, unique.length * 2), keys: unique })
