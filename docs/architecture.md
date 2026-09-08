@@ -18,7 +18,9 @@ index.html          Shell: topbar, 7 pantallas vacías, tab bar, sheet
   ├─ assets/js/
   │   ├─ version.js       Identidad de build (namespace del caché del SW)
   │   ├─ core/util.js     Hyperscript el(), normalización de respuestas, PRNG, fechas
+  │   ├─ core/sync-config.js  Credenciales publicables del endpoint de sync
   │   ├─ core/store.js    Estado persistente en localStorage + racha
+  │   ├─ core/sync.js     Fusión de estados y sincronización con la nube
   │   ├─ core/srs.js      Cajas de Leitner, vencimientos, bandas Cambridge
   │   ├─ core/content.js  Registro, índice por patrón y selección de ejercicios
   │   ├─ data/*.js        11 archivos de contenido que se auto-registran
@@ -66,3 +68,19 @@ escrituras agrupadas cada 220 ms porque la pantalla de examen corrige ocho
 huecos de golpe. Si el navegador prohíbe el almacenamiento (modo privado), el
 estado cae a memoria y la pantalla de Ajustes lo advierte en vez de fallar en
 silencio.
+
+## Sincronización
+
+`localStorage` es por dispositivo, así que ese mismo registro se sube tal cual a
+una fila de Postgres identificada por un código de 16 caracteres. `sync.js` no
+tiene servidor propio: habla por HTTP con dos funciones SQL y nada más.
+
+El punto delicado es la fusión, y se resuelve sin coordinador: `mergeStates` es
+idempotente y conmutativa (máximo sobre contadores, gana-el-más-reciente sobre
+decisiones), de modo que dos dispositivos convergen al mismo estado sin importar
+el orden ni cuántas veces se sincronicen. La escritura usa control optimista por
+revisión, así que dos subidas simultáneas no se pisan. Detalle completo en
+[sync.md](sync.md).
+
+Nada de esto está en el camino crítico del arranque: si la red falla o el
+endpoint no está configurado, la app es exactamente la de antes.

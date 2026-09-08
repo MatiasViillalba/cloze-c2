@@ -15,6 +15,7 @@
     return {
       v: SCHEMA,
       createdAt: Date.now(),
+      updatedAt: 0,            /* stamped on every write; sync.js orders by it */
       settings: {
         haptics: true,
         autoAdvance: true,
@@ -36,6 +37,7 @@
   let state = blank();
   let saveTimer = null;
   let available = true;
+  const listeners = [];
 
   function load() {
     try {
@@ -60,8 +62,7 @@
     return state;
   }
 
-  function flush() {
-    saveTimer = null;
+  function write() {
     if (!available) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
@@ -69,6 +70,29 @@
       available = false;
     }
   }
+
+  function flush() {
+    saveTimer = null;
+    state.updatedAt = Date.now();
+    write();
+    /* Sync listens here. It runs even when localStorage is unavailable, so a
+       private window still uploads its session. */
+    listeners.forEach((fn) => { try { fn(state); } catch (err) { /* never block a save */ } });
+  }
+
+  /**
+   * Swaps in a whole state record — the merged result of a sync. Deliberately
+   * does not re-stamp `updatedAt`: the merged state must stay byte-identical to
+   * what was just uploaded, or the next pass would see a phantom local edit.
+   */
+  function replace(next) {
+    state = next;
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    write();
+    return state;
+  }
+
+  const onChange = (fn) => { listeners.push(fn); };
 
   function save() {
     if (saveTimer) return;
@@ -152,7 +176,7 @@
   }
 
   CPE.store = {
-    load, save, flush, get, update, reset,
+    load, save, flush, get, update, reset, replace, onChange,
     logAnswers, logExercise, todayCount, liveStreak,
     exportJSON, importJSON,
     get available() { return available; }

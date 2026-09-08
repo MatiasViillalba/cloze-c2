@@ -42,8 +42,9 @@ requiere cuenta de desarrollador.
    direcciones, ocupa toda la pantalla y arranca instantánea.
 6. Para comprobarlo: activá el **modo avión** y abrila. Funciona igual.
 
-> El progreso se guarda en el dispositivo. Antes de cambiar de teléfono, usá
-> **Ajustes → Exportar progreso** para llevártelo.
+> El progreso se guarda en el dispositivo. Para que el celular y la computadora
+> vean lo mismo — y para no depender de un solo aparato — activá
+> **Ajustes → Sincronización**: ver [docs/sync.md](docs/sync.md).
 
 ## Publicar el repositorio
 

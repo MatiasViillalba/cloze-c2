@@ -4,6 +4,29 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-09-08
+
+### Added
+
+- **Sincronización entre dispositivos.** El progreso deja de vivir atado a un
+  navegador: se sube a una fila de Postgres identificada por un código de 16
+  caracteres, y el celular y la computadora se mantienen al día solos. Sin
+  cuenta, sin contraseña y sin login: el código es la identidad.
+- **Sección Sincronización en Ajustes.** Crear un código, vincular con uno
+  existente, ver el estado de la última subida, sincronizar a mano y desvincular
+  el dispositivo (que no borra nada, ni local ni en la nube).
+- **Fusión sin pérdida.** Cada sincronización es bajar → fusionar → subir. La
+  fusión es idempotente y conmutativa, así que sincronizar dos veces no duplica
+  nada y ningún dispositivo tiene prioridad sobre el otro. Una sesión hecha en
+  modo avión sube sola al recuperar la señal.
+- **`scripts/supabase-setup.sql` y `docs/sync.md`** con la puesta en marcha
+  completa, el modelo de amenazas y las reglas de fusión.
+
+### Changed
+
+- El registro de estado lleva `updatedAt`, y `store` avisa a quien escuche cada
+  vez que se escribe: es lo que dispara la subida.
+
 ## [1.2.0] — 2026-09-07
 
 ### Added

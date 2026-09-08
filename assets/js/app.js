@@ -166,6 +166,7 @@
   function boot() {
     CPE.store.load();
     injectDefs();
+    CPE.sync.init();
     CPE.applyTextScale(CPE.store.get('settings').textScale);
     wireChrome();
     refreshStreakPill();

@@ -216,4 +216,45 @@ if (JSDOM) {
       'lo marcado como aprendido sale de los puntos debiles'
     );
   });
+
+  test('sin endpoint configurado, Ajustes explica en vez de romperse', () => {
+    CPE.SYNC_CONFIG = { url: '', anonKey: '' };
+    CPE.app.go('settings');
+    assert.match($('#screen-settings').textContent, /Sincronización sin configurar/);
+  });
+
+  test('configurado y sin vincular, Ajustes ofrece activar y abre la hoja', () => {
+    CPE.SYNC_CONFIG = { url: 'https://stand-in.test', anonKey: 'anon-key' };
+    CPE.app.go('settings');
+
+    const activar = [...$('#screen-settings').querySelectorAll('.set-row')]
+      .find((row) => /Sincronizar mis dispositivos/.test(row.textContent));
+    assert.ok(activar, 'no hay fila para activar la sincronización');
+
+    activar.click();
+    const sheet = $('#sheet');
+    assert.equal(sheet.hidden, false, 'la hoja no se abrió');
+    assert.ok(sheet.querySelector('.sync-input'), 'falta el campo para pegar un código');
+    assert.match(sheet.textContent, /Crear un código nuevo/);
+    CPE.sheet.close();
+  });
+
+  test('vinculado, Ajustes muestra el código y el estado', () => {
+    const code = CPE.sync.generateCode();
+    /* Se entra por la puerta de atrás: link() saldría a la red, y lo que se
+       comprueba acá es el pintado, no el transporte. */
+    window.localStorage.setItem('cpe.cloze.sync.v1', JSON.stringify({ code, rev: 3, lastAt: Date.now(), dirty: false }));
+    CPE.sync.init();
+
+    CPE.app.go('settings');
+    const host = $('#screen-settings');
+    assert.match(host.textContent, new RegExp(CPE.sync.formatCode(code)), 'el código tiene que ser legible');
+    /* init() ya salió a buscar novedades, así que el estado está en marcha. */
+    assert.match(host.textContent, /Sincronizando…|Al día|Sin conexión/);
+    assert.ok(host.querySelector('.sync-dot'), 'falta el semáforo de estado');
+
+    CPE.sync.unlink();
+    CPE.app.go('settings');
+    assert.doesNotMatch($('#screen-settings').textContent, new RegExp(code), 'desvincular esconde el código');
+  });
 }

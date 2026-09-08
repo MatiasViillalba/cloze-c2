@@ -43,8 +43,8 @@ Merece la pena conocerlos antes de que sorprendan:
   de inicio y con iOS 16.4 o superior. Esta app no las usa.
 - **El almacenamiento se puede borrar.** Safari puede purgar los datos de un
   sitio que no se visita durante unas semanas. Instalada en la pantalla de
-  inicio el riesgo baja mucho, pero no es cero: por eso existe
-  **Ajustes → Exportar progreso**.
+  inicio el riesgo baja mucho, pero no es cero: por eso conviene activar
+  **Ajustes → Sincronización**, que además mantiene una copia en la nube.
 - **La vibración no existe.** `navigator.vibrate` no está implementado en iOS.
   El interruptor de vibración de Ajustes no hace nada en el iPhone; se mantiene
   porque sí funciona en Android.

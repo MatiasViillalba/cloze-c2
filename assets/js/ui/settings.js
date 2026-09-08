@@ -2,12 +2,15 @@
  * Settings screen.
  *
  * Deliberately harmless: there is nothing on this screen that can destroy
- * months of progress with a mis-tap. No export, no import, no reset — the
- * study data simply lives on the device.
+ * months of progress with a mis-tap. No export, no import, no reset — the only
+ * destructive-looking control, "Desvincular", touches neither the local data
+ * nor the cloud copy.
  */
 (function (CPE) {
   'use strict';
   const { el } = CPE.util;
+
+  let unsubscribeSync = null;
 
   function toggleRow(title, sub, key) {
     const settings = CPE.store.get('settings');
@@ -91,11 +94,180 @@
     );
   }
 
+  /* ------------------------------------------------------------ Sync --- */
+
+  function copy(text, label) {
+    const done = () => CPE.toast((label || 'Código') + ' copiado', 'good');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => CPE.toast('No se pudo copiar'));
+      return;
+    }
+    /* Older iOS standalone: a hidden field is the only thing that works. */
+    const tmp = el('input', { value: text, style: 'position:fixed;opacity:0' });
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { document.execCommand('copy'); done(); } catch (err) { CPE.toast('No se pudo copiar'); }
+    tmp.remove();
+  }
+
+  function ago(ts) {
+    if (!ts) return 'nunca';
+    const mins = Math.floor((Date.now() - ts) / 60000);
+    if (mins < 1) return 'recién';
+    if (mins < 60) return 'hace ' + mins + ' min';
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return 'hace ' + hours + ' h';
+    return 'hace ' + Math.floor(hours / 24) + ' días';
+  }
+
+  function syncStatusText(s) {
+    if (s.phase === 'syncing') return 'Sincronizando…';
+    if (s.phase === 'error') return (s.error || 'Error') + ' · se reintenta solo';
+    if (s.dirty) return 'Cambios sin subir';
+    return 'Al día · última vez ' + ago(s.lastAt);
+  }
+
+  /** The code, shown big enough to copy onto another device by hand. */
+  function codeSheet(code) {
+    const pretty = CPE.sync.formatCode(code);
+    CPE.sheet.open(el('div', null,
+      el('div.h3', { text: 'Tu código de sincronización' }),
+      el('div.muted', { style: 'margin-top:6px', text: 'Guardalo. Es la única llave de tu progreso: quien lo tenga, ve y modifica tus datos.' }),
+      el('div.sync-code.sync-code--big', { text: pretty }),
+      el('div.tiny', { style: 'text-align:center;color:var(--fg-mute)', text: 'En el otro dispositivo: Ajustes → Sincronización → Ya tengo un código' }),
+      el('div.actions', { style: 'margin-top:18px' },
+        el('button.btn.btn--primary.btn--block', { type: 'button', text: 'Copiar código', onclick: () => copy(pretty) }),
+        el('button.btn.btn--quiet.btn--block', { type: 'button', text: 'Listo', onclick: () => CPE.sheet.close() })
+      )
+    ));
+  }
+
+  /** Two doors: start a new cloud record, or join one that already exists. */
+  function linkSheet() {
+    const input = el('input.sync-input', {
+      type: 'text', autocomplete: 'off', autocapitalize: 'characters',
+      spellcheck: 'false', placeholder: 'XXXX-XXXX-XXXX-XXXX',
+      'aria-label': 'Código de sincronización'
+    });
+
+    const create = el('button.btn.btn--primary.btn--block', { type: 'button', text: 'Crear un código nuevo' });
+    const join = el('button.btn.btn--ghost.btn--block', { type: 'button', style: 'margin-top:10px', text: 'Vincular este dispositivo' });
+
+    function busy(button, on, label) {
+      button.disabled = on;
+      button.textContent = on ? 'Conectando…' : label;
+    }
+
+    create.onclick = () => {
+      busy(create, true);
+      CPE.sync.create().then(
+        () => { CPE.sheet.close(); codeSheet(CPE.sync.status().code); },
+        (err) => { busy(create, false, 'Crear un código nuevo'); CPE.toast(err.message || 'No se pudo conectar', 'bad'); }
+      );
+    };
+
+    join.onclick = () => {
+      if (!CPE.sync.validCode(input.value)) { CPE.toast('El código tiene 16 caracteres', 'bad'); return; }
+      busy(join, true);
+      CPE.sync.link(input.value).then(
+        () => { CPE.sheet.close(); CPE.toast('Dispositivo vinculado. Progreso fusionado.', 'good'); CPE.app.go('settings', null, { replace: true }); },
+        (err) => { busy(join, false, 'Vincular este dispositivo'); CPE.toast(err.message || 'No se pudo conectar', 'bad'); }
+      );
+    };
+
+    CPE.sheet.open(el('div', null,
+      el('div.h3', { text: 'Sincronizar dispositivos' }),
+      el('div.muted', { style: 'margin-top:6px', text: 'Un código, sin cuenta ni contraseña. Empezá por el dispositivo que tiene tu progreso al día — normalmente el celular.' }),
+      el('div', { style: 'margin-top:18px' }, create),
+      el('div.sync-or', { text: 'o' }),
+      el('div.muted', { style: 'margin-bottom:8px', text: 'Ya tengo un código' }),
+      input,
+      join
+    ));
+  }
+
+  function syncCard() {
+    if (!CPE.sync.configured()) {
+      return el('div.card', null,
+        el('div.h3', { text: 'Sincronización sin configurar' }),
+        el('div.muted', { style: 'margin-top:6px', text: 'Falta conectar la app con su base de datos. Los pasos están en docs/sync.md del repositorio; son cinco minutos y una sola vez.' })
+      );
+    }
+
+    const s = CPE.sync.status();
+
+    if (!s.enabled) {
+      return el('div.set-list', null,
+        el('button.set-row', { type: 'button', onclick: linkSheet },
+          el('div.set-row__t', null,
+            el('b', { text: 'Sincronizar mis dispositivos' }),
+            el('span', { text: 'Tu progreso, igual en el celular y en la compu. Sin cuenta: un código y listo.' })
+          ),
+          el('span.chip.chip--ember', { text: 'Activar' })
+        )
+      );
+    }
+
+    return el('div.set-list', null,
+      el('button.set-row', { type: 'button', onclick: () => copy(s.pretty) },
+        el('div.set-row__t', null,
+          el('b', { text: 'Código de sincronización' }),
+          el('span.sync-code', { text: s.pretty })
+        ),
+        el('span.chip', { text: 'Copiar' })
+      ),
+      el('button.set-row', {
+        type: 'button',
+        onclick: () => {
+          CPE.sync.run({ loud: true }).then(
+            () => CPE.toast('Progreso sincronizado', 'good'),
+            (err) => CPE.toast(err.message || 'No se pudo sincronizar', 'bad')
+          );
+        }
+      },
+        el('span.sync-dot', { 'data-p': s.dirty && s.phase === 'idle' ? 'pending' : s.phase }),
+        el('div.set-row__t', null,
+          el('b', { text: 'Estado' }),
+          el('span', { text: syncStatusText(s) })
+        ),
+        el('span.chip.chip--ember', { text: 'Sincronizar' })
+      ),
+      el('button.set-row', {
+        type: 'button',
+        onclick: () => {
+          CPE.sync.unlink();
+          CPE.toast('Dispositivo desvinculado. Tu progreso sigue acá.');
+        }
+      },
+        el('div.set-row__t', null,
+          el('b', { text: 'Desvincular este dispositivo' }),
+          el('span', { text: 'Deja de subir y bajar cambios. No borra nada, ni acá ni en la nube.' })
+        ),
+        el('span.chip.chip--bad', { text: 'Desvincular' })
+      )
+    );
+  }
+
+  /** Repaints itself whenever a sync starts, finishes or fails. */
+  function syncSection() {
+    const wrap = el('div');
+    const paint = () => { wrap.innerHTML = ''; wrap.appendChild(syncCard()); };
+    if (unsubscribeSync) unsubscribeSync();
+    unsubscribeSync = CPE.sync.subscribe(() => { if (wrap.isConnected) paint(); });
+    paint();
+    return wrap;
+  }
+
+  /* ---------------------------------------------------------- Render --- */
+
   function render(host) {
     const stats = CPE.content.stats();
     host.innerHTML = '';
 
-    host.appendChild(el('div.eyebrow', { text: 'Estudio', style: 'margin-top:14px' }));
+    host.appendChild(el('div.eyebrow', { text: 'Sincronización', style: 'margin-top:14px' }));
+    host.appendChild(syncSection());
+
+    host.appendChild(el('div.eyebrow', { text: 'Estudio' }));
     host.appendChild(el('div.set-list', null,
       segRow('Objetivo diario', 'Huecos por día para mantener la racha', 'dailyGoal', [
         { label: '12', value: 12 }, { label: '24', value: 24 }, { label: '40', value: 40 }
@@ -142,7 +314,12 @@
       el('div.h3', { text: CPE.APP_NAME }),
       el('div.tiny', { style: 'margin-top:4px', text: 'v' + CPE.VERSION + ' · build ' + CPE.BUILD }),
       el('div.tiny', { style: 'margin-top:8px', text: stats.passages + ' textos · ' + stats.drills + ' ejercicios rápidos · ' + stats.gaps + ' huecos · ' + stats.skills + ' patrones' }),
-      el('div.tiny', { style: 'margin-top:8px', text: 'Funciona sin conexión. Todo tu progreso se queda en este dispositivo.' })
+      el('div.tiny', {
+        style: 'margin-top:8px',
+        text: CPE.sync.enabled()
+          ? 'Funciona sin conexión. Lo que estudiés offline se sube solo al volver la señal.'
+          : 'Funciona sin conexión. Todo tu progreso se queda en este dispositivo.'
+      })
     ));
   }
 

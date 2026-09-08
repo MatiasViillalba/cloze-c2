@@ -14,7 +14,7 @@ const files = [
   'sw.js',
   'assets/js/version.js',
   'assets/js/app.js',
-  ...['util', 'store', 'srs', 'words', 'content'].map((n) => `assets/js/core/${n}.js`),
+  ...['util', 'sync-config', 'store', 'sync', 'srs', 'words', 'content'].map((n) => `assets/js/core/${n}.js`),
   ...['toast', 'home', 'cloze', 'drill', 'result', 'mistakes', 'weak', 'library', 'stats', 'settings'].map((n) => `assets/js/ui/${n}.js`),
   ...readdirSync(join(ROOT, 'assets/js/data')).filter((f) => f.endsWith('.js')).sort().map((f) => `assets/js/data/${f}`)
 ];

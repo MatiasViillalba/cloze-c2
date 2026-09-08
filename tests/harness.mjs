@@ -19,7 +19,9 @@ export const ROOT = join(here, '..');
 const CORE = [
   'assets/js/version.js',
   'assets/js/core/util.js',
+  'assets/js/core/sync-config.js',
   'assets/js/core/store.js',
+  'assets/js/core/sync.js',
   'assets/js/core/srs.js',
   'assets/js/core/words.js',
   'assets/js/core/content.js'
