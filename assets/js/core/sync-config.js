@@ -14,6 +14,6 @@
  */
 window.CPE = window.CPE || {};
 window.CPE.SYNC_CONFIG = {
-  url: '',       /* p.ej. 'https://abcdefghijklm.supabase.co' */
-  anonKey: ''    /* la clave "anon public" del panel de Supabase */
+  url: 'https://mhkvfqlmacpkfzcwfymx.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oa3ZmcWxtYWNwa2Z6Y3dmeW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NjU1OTgsImV4cCI6MjEwNDQ0MTU5OH0.kQzs7XzClk2rec4QstJlJs0r6OrsuKg1C7ZWbucN8nE'
 };
