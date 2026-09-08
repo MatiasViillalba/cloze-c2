@@ -8,7 +8,7 @@
  * app is on the home screen.
  */
 
-const BUILD = '2026.09.07.2';
+const BUILD = '2026.09.08.1';
 const CACHE = 'cloze-c2-' + BUILD;
 
 const ASSETS = [

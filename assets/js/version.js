@@ -6,4 +6,4 @@
 window.CPE = window.CPE || {};
 window.CPE.APP_NAME = 'Cloze C2';
 window.CPE.VERSION = '1.2.0';
-window.CPE.BUILD = '2026.09.07.2';
+window.CPE.BUILD = '2026.09.08.1';
